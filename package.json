@@ -1,0 +1,19 @@
+{
+  "name": "codex-jarvis",
+  "version": "0.1.0",
+  "description": "Install supervised multi-model Jarvis workflows for Codex desktop and CLI.",
+  "type": "module",
+  "bin": { "codex-jarvis": "bin/codex-jarvis.mjs" },
+  "engines": { "node": ">=22" },
+  "license": "MIT",
+  "keywords": ["codex", "jarvis", "agents", "orchestration", "cli"],
+  "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
+  "scripts": {
+    "test": "node --test",
+    "test:package": "node scripts/smoke-package.mjs",
+    "test:runtime": "node scripts/check-runtime.mjs",
+    "check": "node --check bin/codex-jarvis.mjs && node --check src/installer.mjs && node --check src/wizard.mjs",
+    "prepack": "npm run check && npm test"
+  },
+  "dependencies": { "smol-toml": "1.8.0" }
+}
