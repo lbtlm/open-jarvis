@@ -554,8 +554,10 @@ export function audit(options = {}) {
 
 export function recommend(options = {}) {
   const home = normalizeHome(options?.home);
-  const active = newestOwnedManifest(home)?.manifest;
-  let base = active?.settings?.models ?? defaultModels;
+  // Prefill from the same validated receipt selection used by audit/install.
+  // Otherwise CLI and wizard defaults can override an explicit legacy receipt.
+  const prior = ownership(options, home);
+  let base = prior.models ?? defaultModels;
   const configPath = targetPath(home, 'config.toml');
   let serviceTier = null;
   let hasConfig = false;
@@ -574,7 +576,7 @@ export function recommend(options = {}) {
     base = { ...base, controller };
   }
   const models = resolveModels(options.models, options.controllerEffort, base);
-  if (!active && !hasConfig) {
+  if (!prior.manifests.length && !hasConfig) {
     for (const value of Object.values(models)) {
       if (!Object.hasOwn(value, 'fast')) value.fast = false;
     }

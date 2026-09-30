@@ -346,6 +346,7 @@ test('only model/effort/fast for supported roles can travel, with no paths or ac
     { controller: { model: 'gpt-6.1-sol', account: 'secret' } },
     { controller: { path: 'C:/Users/private' } },
     { controller: { model: 'C:/Users/private' } },
+    ...['/Users/private', '../private', 'provider/../private', 'provider//model', 'provider/model/extra', 'provider\\model', 'https://private', 'model name', 'model\nname', 'model\u0000name', 'a'.repeat(129)].map(model => ({ controller: { model } })),
     { unknown: { model: 'gpt-6.1-sol' } },
     { controller: { fast: 'yes' } },
     { controller: { effort: 'invalid' } },

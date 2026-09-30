@@ -23,10 +23,10 @@ Open Jarvis brings a controller-supervised workflow to **Codex Desktop and CLI**
 
 Requires **Node.js 22+** (npm/npx included) and a signed-in Codex client with standalone subagent role configuration. Desktop and CLI share one installation when they use the same Codex home.
 
-Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.1.0**; update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
+Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.1.1**; update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.1/open-jarvis-0.1.1.tgz open-jarvis install
 ```
 
 **Choose your setup in the terminal wizard:** controller and worker models, reasoning effort, Fast, and an employee starter. The starter defaults to `none`, so you can begin with the collaboration rules and add specialists as needed. Existing preferences take priority; fresh installs recommend Astra / High for the controller. Fast is separate and defaults to off. Ultra and a switch to Sol are never enabled automatically.
@@ -35,14 +35,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open
 <summary>pnpm alternative and reviewed local packages</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.1/open-jarvis-0.1.1.tgz dlx open-jarvis install
 ```
 
 For a reviewed tarball in your current directory, use either runner:
 
 ```sh
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.1.tgz dlx open-jarvis install
 ```
 
 Both runners use the same Codex home, employees and assets. The package is distributed through GitHub Releases, **not the npm registry**; dependencies may still come from npm, so installation is not necessarily offline. Installation targets `--home`, then `CODEX_HOME`, then `~/.codex`. `--yes` is noninteractive and preserves existing preferences. pnpm **10.18.1** has been tested locally on Windows; see [compatibility (English)](docs/compatibility.md).
@@ -130,9 +130,9 @@ The older `employees --init --yes` command remains compatible and defaults to ad
 For example, preview writing candidates before explicitly writing them:
 
 ```sh
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
@@ -151,10 +151,10 @@ An employee card is a file asset, not a resident process. See [employee conventi
 The entries below are **command suffixes**, not standalone shell commands. Append one to the full runner prefix:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.1/open-jarvis-0.1.1.tgz open-jarvis
 ```
 
-For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.1.0.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` and keep the suffix unchanged.
+For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.1/open-jarvis-0.1.1.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.1.1.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.1.1.tgz dlx open-jarvis` and keep the suffix unchanged.
 
 | Command suffix | Purpose |
 | --- | --- |
@@ -170,12 +170,12 @@ For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/o
 For example, run the static check with:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.1/open-jarvis-0.1.1.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
 `--home PATH` selects the Codex home; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
-Use `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` for all options.
+Use `npx --package ./open-jarvis-0.1.1.tgz open-jarvis --help` for all options.
 `audit` and `doctor` make no live model requests and do not prove an employee has run.
 
 <a id="assets"></a>
@@ -197,10 +197,10 @@ Default skill roots are project `.agents/skills`, project `.codex/skills`, home 
 Repeated `--skill-root PATH` options completely replace the default export-root list.
 
 ```sh
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.1.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.
