@@ -6,7 +6,7 @@ Open Jarvis provides a controller-supervised workflow for specialist collaborati
 For development, writing, office work, video and other tasks, the controller defines acceptance, selects suitable specialists, supervises execution and accepts the result.
 A specialist's profession is separate from the execution model profile. The user's model, reasoning effort and Fast choices take priority.
 
-This is the **0.1.0 preview**. It has not been published to npm. GitHub repository: [lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis).
+This is the **0.1.0 preview**, with no GitHub Release yet. Distribution uses GitHub Releases; the package is not published to npm. GitHub repository: [lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis).
 The three READMEs describe the same features; the CLI and all reference documents are not yet fully localized.
 The project makes no claim of official certification, comparative model pricing, quota benefits or fixed savings.
 
@@ -27,14 +27,14 @@ The starter defaults to `none`: install the collaboration rules first and select
 `--yes` installs noninteractively and preserves existing preferences; a fresh installation recommends Astra / High.
 Fast is a separate choice and defaults to off. There is no automatic Ultra setting or switch of the user's controller to Sol.
 
-After publication to npm, this shorter command will be available:
+Once the GitHub Release contains the matching package, you can install directly from its URL:
 
 ```sh
-npx open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-The examples below use the post-publication command to show the arguments. With the current local package, replace `npx open-jarvis`
-with `npx --package ./open-jarvis-0.1.0.tgz open-jarvis` and keep the remaining arguments.
+The remaining examples use a local-package prefix: use a reviewed candidate now, or download the matching package to the current directory once the Release is available.
+Examples use 0.1.0. For another version, update the URL, filename and version together.
 You do not need to clone the source, install Jarvis globally or run a Node script manually.
 
 After installation, open a new Codex task and try a request such as:
@@ -52,33 +52,33 @@ npx is the default entrypoint. If you already use pnpm, you can run the same pac
 pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-After publication to npm, use:
+After the GitHub Release is available, you can also use its package URL directly:
 
 ```sh
-pnpm dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-For other examples, replace `npx open-jarvis` with `pnpm dlx open-jarvis`;
-for the current local package, use the `--package` prefix above and keep the command and arguments.
+For subsequent local-package examples, replace `npx --package ./open-jarvis-0.1.0.tgz open-jarvis`
+with `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` and keep the command and arguments.
 Both runners share the same Codex home, employees and assets. You do not need two installations or a second asset store.
 pnpm **10.18.1** has been tested locally on Windows. See [compatibility (English)](docs/compatibility.md).
 
 ## Common commands
 
-| Command | Purpose | Example (after publication) |
+| Command | Purpose | Example (local package) |
 | --- | --- | --- |
-| `audit` | Preview installation changes without writing | `npx open-jarvis audit` |
-| `install` | Install or upgrade with protected backups | `npx open-jarvis install --starter none` |
-| `doctor` | Statically inspect installed files | `npx open-jarvis doctor` |
-| `rollback` | Restore one installation using its manifest | `npx open-jarvis rollback --manifest /path/to/manifest.json` |
-| `employees` | Search employee cards or preview starter initialization | `npx open-jarvis employees --query writing` |
-| `plan` | Preview an employee, skills and execution profile | `npx open-jarvis plan --employee nova-writer --difficulty standard` |
-| `export` | Write a new asset archive | `npx open-jarvis export --out ./my-assets.jarvis.json.gz` |
-| `import` | Preview an archive before applying it | `npx open-jarvis import --from ./my-assets.jarvis.json.gz` |
+| `audit` | Preview installation changes without writing | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis audit` |
+| `install` | Install or upgrade with protected backups | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --starter none` |
+| `doctor` | Statically inspect installed files | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis doctor` |
+| `rollback` | Restore one installation using its manifest | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis rollback --manifest /path/to/manifest.json` |
+| `employees` | Search employee cards or preview starter initialization | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --query writing` |
+| `plan` | Preview an employee, skills and execution profile | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard` |
+| `export` | Write a new asset archive | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz` |
+| `import` | Preview an archive before applying it | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz` |
 
 `/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
 `--home PATH` selects the Codex home; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
-Use `npx open-jarvis --help` for all options, applying the local-package prefix when needed.
+Use `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` for all options.
 `audit` and `doctor` make no live model requests and do not prove an employee has run.
 
 ## Controller, specialists and models
@@ -119,9 +119,9 @@ The older `employees --init --yes` command remains compatible and defaults to ad
 For example, preview writing candidates before explicitly writing them:
 
 ```sh
-npx open-jarvis employees --init --starter writing
-npx open-jarvis employees --init --starter writing --yes
-npx open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
@@ -145,10 +145,10 @@ Default skill roots are project `.agents/skills`, project `.codex/skills`, home 
 Repeated `--skill-root PATH` options completely replace the default export-root list.
 
 ```sh
-npx open-jarvis export --out ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.
@@ -172,6 +172,14 @@ Templates and job titles are not competence evidence. An unrelated backend emplo
 
 **How do updates and rollback work?** Run `audit`, then `install`; use the installation manifest path with `rollback --manifest`.
 Installation and rollback manage their own configuration without deleting user employees or assets. Later conflicting edits cause rollback to refuse. Backups may be sensitive; keep them private.
+
+## Development, releases and upgrades
+
+Develop features on branches and merge them into `dev` through PRs. For a release, open a `dev` → `main` release PR.
+Merging into `main` authorizes automatic CI/CD: once workflow checks pass, it creates the version tag and GitHub Release package without a second publication approval.
+A failed workflow does not mean the version has shipped. Check the merge record and Release artifacts separately.
+GitHub Releases host the package, but installation dependencies may still come from a registry; fully offline installation is not guaranteed.
+See [release procedures (English)](docs/releasing.md) and [upgrades (English)](docs/upgrading.md) for version selection, updating and rollback.
 
 ## Contributing and current limits
 

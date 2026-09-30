@@ -61,7 +61,7 @@ Windows results above were observed locally. A GitHub Actions matrix is included
 
 ## Publication status
 
-This is a local Open Jarvis release candidate targeting the public [lbtlm/open-jarvis repository](https://github.com/lbtlm/open-jarvis). The `open-jarvis` npm package has not been published. `npx open-jarvis install` becomes a public entrypoint only after the maintainer publishes the verified package under that name. Earlier validation records describe their original snapshots.
+This is an Open Jarvis release candidate for the public [lbtlm/open-jarvis repository](https://github.com/lbtlm/open-jarvis). Distribution uses versioned installer tarballs on GitHub Releases, not an npm registry publication. The public tarball installation commands work only after the corresponding Release is published. Earlier npm package checks refer to the package format and runner, not a registry publication. Earlier validation records describe their original snapshots.
 
 
 ## 2026-09-30 portable team upgrade

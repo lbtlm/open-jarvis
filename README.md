@@ -6,7 +6,7 @@ Open Jarvis 为 Codex Desktop 和 CLI 提供由主控监督的员工协作与资
 它适用于开发、写作、办公、视频等任务：主控定义验收、选择合适的专业员工、监督执行并最终验收。
 员工的专业身份与任务的模型档位分开，用户选择的模型、思考强度和 Fast 设置始终优先。
 
-当前为 **0.1.0 预览版**，尚未发布到 npm。GitHub 仓库：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
+当前为 **0.1.0 预览版**，尚无 GitHub Release。发行通过 GitHub Release，不发布到 npm。GitHub 仓库：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
 三语 README 介绍同一套功能；CLI 和全部参考文档尚未完成本地化。
 本项目不承诺官方认证、模型费率比较、额度收益或固定节省比例。
 
@@ -27,14 +27,14 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
 `--yes` 使用非交互安装并保留已有偏好；全新安装推荐 Astra / High。
 Fast 独立设置，默认关闭，不会自动开启 Ultra 或将用户主控改为 Sol。
 
-公开发布后才可使用以下短命令：
+GitHub Release 发布并包含对应安装包后，才可直接使用远程安装命令：
 
 ```sh
-npx open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-下文用发布后的短命令展示参数。当前使用本地包时，将 `npx open-jarvis`
-替换为 `npx --package ./open-jarvis-0.1.0.tgz open-jarvis`，后面的参数保持不变。
+下文统一使用本地包前缀：现在使用审阅过的候选包；Release 发布后，也可先下载对应安装包到当前目录。
+示例以 0.1.0 为例，使用其他版本时请同步替换 URL、文件名和版本号。
 无需克隆源码、全局安装 Jarvis 或手动运行 Node 脚本。
 
 安装后打开新的 Codex 任务，例如：
@@ -52,33 +52,33 @@ npx 是默认入口。已有 pnpm 的用户可以选择同一个包和安装向�
 pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-公开发布后使用：
+GitHub Release 发布后也可直接使用远程包：
 
 ```sh
-pnpm dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-其他示例同样可将 `npx open-jarvis` 换为 `pnpm dlx open-jarvis`；
-当前本地包则使用上面的 `--package` 前缀，并保留命令及参数。
+后续本地包示例可将 `npx --package ./open-jarvis-0.1.0.tgz open-jarvis`
+换为 `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis`，并保留命令及参数。
 两者共用 Codex home、员工和资产，不必安装两遍或建立第二套资产库。
 pnpm **10.18.1** 已在 Windows 本地实测；支持范围见[兼容性说明（英文）](docs/compatibility.md)。
 
 ## 常用命令
 
-| 命令 | 用途 | 示例（发布后入口） |
+| 命令 | 用途 | 示例（本地包入口） |
 | --- | --- | --- |
-| `audit` | 只读预览安装变更 | `npx open-jarvis audit` |
-| `install` | 安装或升级，并保护备份 | `npx open-jarvis install --starter none` |
-| `doctor` | 静态检查已安装文件 | `npx open-jarvis doctor` |
-| `rollback` | 按清单恢复一次安装 | `npx open-jarvis rollback --manifest /path/to/manifest.json` |
-| `employees` | 检索员工卡或预览模板初始化 | `npx open-jarvis employees --query writing` |
-| `plan` | 预览员工、技能及执行档位 | `npx open-jarvis plan --employee nova-writer --difficulty standard` |
-| `export` | 写入新的资产归档 | `npx open-jarvis export --out ./my-assets.jarvis.json.gz` |
-| `import` | 预览资产归档，确认后导入 | `npx open-jarvis import --from ./my-assets.jarvis.json.gz` |
+| `audit` | 只读预览安装变更 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis audit` |
+| `install` | 安装或升级，并保护备份 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --starter none` |
+| `doctor` | 静态检查已安装文件 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis doctor` |
+| `rollback` | 按清单恢复一次安装 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis rollback --manifest /path/to/manifest.json` |
+| `employees` | 检索员工卡或预览模板初始化 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --query writing` |
+| `plan` | 预览员工、技能及执行档位 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard` |
+| `export` | 写入新的资产归档 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz` |
+| `import` | 预览资产归档，确认后导入 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz` |
 
 `/path/to/manifest.json` 是占位路径，请换成实际安装清单。
 `--home PATH` 选择 Codex home；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx open-jarvis --help` 查看，同样适用本地包前缀。
+完整参数可通过 `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` 查看。
 `audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
 
 ## 主控、专业员工与模型
@@ -119,9 +119,9 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 例如，预览写作候选卡后再明确写入：
 
 ```sh
-npx open-jarvis employees --init --starter writing
-npx open-jarvis employees --init --starter writing --yes
-npx open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
@@ -145,10 +145,10 @@ npx open-jarvis plan --employee nova-writer --difficulty standard --skill my-wri
 重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
 
 ```sh
-npx open-jarvis export --out ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。
@@ -172,6 +172,14 @@ npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 
 **如何更新和回滚？** 先 `audit`，再 `install`；回滚使用该次安装清单的 `--manifest` 路径。
 安装和回滚只管理自身配置，不删除用户员工或资产；后续修改冲突会拒绝回滚。备份可能敏感，请勿公开。
+
+## 开发、发布与更新
+
+功能开发使用分支，通过 PR 合入 `dev`；准备发行时，再创建 `dev` → `main` 的发布 PR。
+合并到 `main` 即批准自动 CI/CD：通过工作流检查后生成版本标签和 GitHub Release 安装包，无需二次发布审批。
+工作流失败时不能把该版本视为已发行；仓库合并记录与 Release 产物应分别核对。
+包由 GitHub Release 托管，但安装依赖仍可能从 registry 获取，不保证完全离线。
+发行规则见[发布流程（英文）](docs/releasing.md)，版本选择、更新与回滚见[升级说明（英文）](docs/upgrading.md)。
 
 ## 贡献与当前限制
 

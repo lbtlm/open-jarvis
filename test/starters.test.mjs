@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { realpathSync, mkdtempSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { starters, starterEmployees } from '../src/starters.mjs';
 import { seedEmployees } from '../src/team.mjs';
 
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'jarvis-starters-'));
+  const root = mkdtempSync(join(realpathSync(tmpdir()), 'jarvis-starters-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   return join(root, 'home');
 }

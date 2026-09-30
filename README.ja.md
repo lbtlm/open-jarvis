@@ -6,7 +6,7 @@ Open Jarvis は、Codex Desktop と CLI で統括エージェントが専門ス�
 開発、執筆、事務、動画などの作業で、統括が受け入れ条件を定め、適任のスタッフを選び、実行を監督して最終確認を行います。
 スタッフの専門職と実行時のモデル設定は別に扱い、ユーザーが選んだモデル、推論の強度、Fast 設定を優先します。
 
-現在は **0.1.0 プレビュー版**です。npm には未公開です。GitHub リポジトリ：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
+現在は **0.1.0 プレビュー版**で、GitHub Release はまだありません。GitHub Release で配布し、npm には公開しません。GitHub リポジトリ：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
 3 言語の README は同じ機能を説明していますが、CLI とすべての参考文書が多言語化されているわけではありません。
 公式認証、モデル料金の比較、利用枠への効果、一定の削減率を保証するものではありません。
 
@@ -27,14 +27,14 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
 `--yes` は対話なしでインストールし、既存の設定を維持します。新規インストールでは Astra / High を推奨します。
 Fast は独立した設定で、既定ではオフです。Ultra の自動設定や、ユーザーの統括を Sol に自動変更することはありません。
 
-一般公開後にのみ、次の短いコマンドが使えるようになります。
+GitHub Release に対応するパッケージが公開された後は、その URL から直接インストールできます。
 
 ```sh
-npx open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-以下の例は公開後の短いコマンドで引数を示しています。現在のローカルパッケージでは、`npx open-jarvis` を
-`npx --package ./open-jarvis-0.1.0.tgz open-jarvis` に置き換え、後続の引数はそのまま使ってください。
+以下の例はローカルパッケージを指定します。現在は確認済みの候補パッケージを使い、Release 公開後は対応するパッケージを作業ディレクトリにダウンロードして使えます。
+例のバージョンは 0.1.0 です。別のバージョンを使う場合、URL、ファイル名、バージョン番号を合わせて変更してください。
 ソースのクローン、Jarvis のグローバルインストール、Node スクリプトの手動実行は不要です。
 
 インストール後、新しい Codex タスクで、例えば次のように依頼します。
@@ -52,33 +52,33 @@ npx open-jarvis install
 pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-一般公開後は次を使います。
+GitHub Release 公開後は、パッケージの URL を直接指定することもできます。
 
 ```sh
-pnpm dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-ほかの例も `npx open-jarvis` を `pnpm dlx open-jarvis` に置き換えられます。
-現在のローカルパッケージでは上記の `--package` 付きの形式を使い、コマンドと引数を維持してください。
+以下のローカルパッケージの例では、`npx --package ./open-jarvis-0.1.0.tgz open-jarvis` を
+`pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` に置き換え、コマンドと引数を維持してください。
 どちらも同じ Codex home、スタッフ、資産を使います。二重のインストールや別の資産保管先は不要です。
 pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性の説明（英語）](docs/compatibility.md)を参照してください。
 
 ## よく使うコマンド
 
-| コマンド | 用途 | 例（公開後の形式） |
+| コマンド | 用途 | 例（ローカルパッケージ） |
 | --- | --- | --- |
-| `audit` | 書き込まずにインストール変更を確認 | `npx open-jarvis audit` |
-| `install` | バックアップを保護して導入・更新 | `npx open-jarvis install --starter none` |
-| `doctor` | 導入済みファイルを静的に検査 | `npx open-jarvis doctor` |
-| `rollback` | マニフェストを使って 1 回分の導入を戻す | `npx open-jarvis rollback --manifest /path/to/manifest.json` |
-| `employees` | スタッフカードを検索、またはテンプレート追加を確認 | `npx open-jarvis employees --query writing` |
-| `plan` | スタッフ、スキル、実行プロファイルを確認 | `npx open-jarvis plan --employee nova-writer --difficulty standard` |
-| `export` | 新しい資産アーカイブを作成 | `npx open-jarvis export --out ./my-assets.jarvis.json.gz` |
-| `import` | 適用前に資産アーカイブを確認 | `npx open-jarvis import --from ./my-assets.jarvis.json.gz` |
+| `audit` | 書き込まずにインストール変更を確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis audit` |
+| `install` | バックアップを保護して導入・更新 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --starter none` |
+| `doctor` | 導入済みファイルを静的に検査 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis doctor` |
+| `rollback` | マニフェストを使って 1 回分の導入を戻す | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis rollback --manifest /path/to/manifest.json` |
+| `employees` | スタッフカードを検索、またはテンプレート追加を確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --query writing` |
+| `plan` | スタッフ、スキル、実行プロファイルを確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard` |
+| `export` | 新しい資産アーカイブを作成 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz` |
+| `import` | 適用前に資産アーカイブを確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz` |
 
 `/path/to/manifest.json` は例示用のパスです。実際のインストールマニフェストに置き換えてください。
 `--home PATH` は Codex home、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
-全オプションは `npx open-jarvis --help` で確認できます。必要に応じてローカルパッケージの形式に置き換えてください。
+全オプションは `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` で確認できます。
 `audit` と `doctor` はモデルへのリクエストを行わず、スタッフが実行されたことも証明しません。
 
 ## 統括・専門スタッフ・モデル
@@ -119,9 +119,9 @@ Fast はモデルや推論の強度とは別に選びます。モデルの利用
 例えば、執筆の候補カードを確認してから明示的に書き込みます。
 
 ```sh
-npx open-jarvis employees --init --starter writing
-npx open-jarvis employees --init --starter writing --yes
-npx open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` は例示用のスキル ID です。実在するスキルに置き換えてください。不足している場合、計画は実行不可として報告されます。
@@ -145,10 +145,10 @@ Jarvis の導入は全スキルの一括導入ではなく、Office、編集、�
 `--skill-root PATH` を複数指定すると、既定のエクスポート探索先の一覧を完全に置き換えます。
 
 ```sh
-npx open-jarvis export --out ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz
-npx open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 プロジェクト資産は、移行元のエクスポートと移行先のインポートの両方で `--project` を明示し、それぞれのプロジェクトパスを指定します。
@@ -172,6 +172,14 @@ npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 
 **更新とロールバックの手順は？** `audit` の後に `install` を実行し、戻す場合はその導入のマニフェストを `rollback --manifest` に指定します。
 導入とロールバックは自身の設定を管理し、ユーザーのスタッフや資産を削除しません。後続の変更と競合するとロールバックを拒否します。機密を含み得るバックアップは公開しないでください。
+
+## 開発・公開・更新
+
+機能開発はブランチで行い、PR を通じて `dev` にマージします。公開時は `dev` → `main` のリリース PR を作成します。
+`main` へのマージが自動 CI/CD の承認になります。ワークフローのチェックに合格するとバージョンタグと GitHub Release のパッケージを生成し、二度目の公開承認は求めません。
+ワークフローが失敗した場合、そのバージョンは公開済みとは扱えません。マージ記録と Release の成果物をそれぞれ確認してください。
+パッケージは GitHub Release で配布しますが、依存関係は registry から取得する場合があり、完全なオフライン導入は保証しません。
+公開ルールは[公開手順（英語）](docs/releasing.md)、バージョン選択・更新・ロールバックは[アップグレードの説明（英語）](docs/upgrading.md)を参照してください。
 
 ## コントリビューションと現在の制限
 

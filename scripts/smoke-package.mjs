@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { realpathSync, mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, join, relative } from 'node:path';
+import { resolve, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -16,23 +16,52 @@ if (!manager || !process.env.npm_config_user_agent?.startsWith(pnpm ? 'pnpm/' : 
 }
 if (/\.(?:cmd|bat)$/i.test(manager)) throw new Error('A package manager JavaScript or native executable entrypoint is required.');
 const root = fileURLToPath(new URL('../', import.meta.url));
-const scratch = mkdtempSync(join(tmpdir(), 'open-jarvis-package-'));
+const suppliedTarball = process.env.OPEN_JARVIS_TARBALL;
+if (suppliedTarball !== undefined && (!isAbsolute(suppliedTarball) || !suppliedTarball.endsWith('.tgz') || !lstatSync(suppliedTarball).isFile())) {
+  throw new Error('OPEN_JARVIS_TARBALL must name an absolute regular .tgz file.');
+}
+const tempRoot = realpathSync(tmpdir());
+const scratch = mkdtempSync(join(tempRoot, 'open-jarvis-package-'));
 const home = join(scratch, 'isolated-home');
 const execManager = (args, cwd = scratch) => execFileSync(/\.[cm]?js$/i.test(manager) ? process.execPath : manager,
   /\.[cm]?js$/i.test(manager) ? [manager, ...args] : args, {
   cwd, encoding: 'utf8', timeout: 60000,
   env: { ...process.env, CODEX_HOME: home, npm_config_update_notifier: 'false', npm_config_ignore_scripts: 'true',
+    npm_config_fetch_retries: '0', npm_config_fetch_timeout: '15000',
     ...(pnpm ? {
       npm_config_cache_dir: process.env.npm_config_cache_dir ?? join(scratch, 'pnpm-cache'),
       npm_config_store_dir: process.env.npm_config_store_dir ?? join(scratch, 'pnpm-store'),
-      npm_config_fetch_retries: '0',
     } : {}),
   },
 });
 try {
-  const packed = JSON.parse(execManager(['pack', '--json', '--pack-destination', scratch], root));
-  const pack = pnpm ? packed : packed[0];
-  const paths = pack.files.map(file => file.path);
+  let tarball = suppliedTarball;
+  if (!tarball) {
+    const packed = JSON.parse(execManager(['pack', '--json', '--pack-destination', scratch], root));
+    const pack = pnpm ? packed : packed[0];
+    tarball = resolve(scratch, pack.filename);
+  }
+  // Inspect the actual archive for both entry modes; never rebuild a supplied release artifact.
+  const readTar = args => execFileSync('tar', args, { encoding: 'utf8', timeout: 15000, maxBuffer: 8 * 1024 * 1024 });
+  const entries = readTar(['-tzf', tarball]).trim().split(/\r?\n/);
+  const types = readTar(['-tvzf', tarball]).trim().split(/\r?\n/);
+  assert.equal(types.length, entries.length);
+  const paths = [];
+  const seen = new Set();
+  entries.forEach((entry, index) => {
+    assert.match(entry, /^package\//);
+    assert.ok(!entry.includes('\\') && !entry.split('/').some(part => part === '..' || part === '.'));
+    assert.ok(!seen.has(entry), 'Duplicate archive entry');
+    seen.add(entry);
+    assert.match(types[index], /^[-d]/, 'Archive links and special files are not allowed');
+    if (types[index].startsWith('d')) return;
+    paths.push(entry.slice('package/'.length));
+  });
+  const manifest = JSON.parse(readTar(['-xOzf', tarball, 'package/package.json']));
+  const expected = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  assert.equal(manifest.name, expected.name);
+  assert.equal(manifest.version, expected.version);
+  assert.deepEqual(manifest.bin, { 'open-jarvis': 'bin/open-jarvis.mjs' });
   assert.ok(paths.includes('bin/open-jarvis.mjs'));
   assert.ok(paths.includes('payload/agents/jarvis_reviewer.toml'));
   assert.ok(paths.includes('payload/skills/jarvis-orchestrator/references/employees.md'));
@@ -44,12 +73,11 @@ try {
     assert.match(path, /^(bin\/|src\/|payload\/|docs\/|README(?:\.(?:en|ja))?\.md$|LICENSE$|CHANGELOG\.md$|CONTRIBUTING\.md$|SECURITY\.md$|package\.json$)/);
     assert.doesNotMatch(path, /(?:^|\/)(?:auth\.json|\.env|node_modules|jarvis-state|\.local|sessions)(?:\/|$)/);
   }
-  const tarball = resolve(scratch, pack.filename);
   const invokeAt = (targetHome, args) => JSON.parse(execManager(pnpm ? [
     '--silent', `--package=${tarball}`, 'dlx',
     'open-jarvis', ...args, '--home', targetHome, '--json',
   ] : [
-    'exec', '--yes', '--offline', '--ignore-scripts', `--package=${tarball}`, '--',
+    'exec', '--yes', '--ignore-scripts', `--package=${tarball}`, '--',
     'open-jarvis', ...args, '--home', targetHome, '--json',
   ]));
   const invoke = (...args) => invokeAt(home, args);
@@ -79,11 +107,11 @@ try {
   assert.equal(second('plan', '--employee', 'atlas-backend', '--difficulty', 'complex').requested.model, 'gpt-6.1-sol');
   assert.equal(invoke('rollback', '--manifest', installed.manifest).status, 'rolled-back');
   assert.equal(existsSync(join(home, 'config.toml')), false);
-  console.log(JSON.stringify({ status: 'PASS', runner: pnpm ? 'pnpm dlx' : 'npm exec', package: pack.filename, files: paths.length,
+  console.log(JSON.stringify({ status: 'PASS', runner: pnpm ? 'pnpm dlx' : 'npm exec', package: tarball, files: paths.length,
     checks: ['allowlisted distribution', `packed ${pnpm ? 'pnpm dlx' : 'npm exec'} entrypoint`, 'audit', 'install', 'doctor', 'idempotence', 'employee reuse', 'export/import', 'destination activation', 'rollback'],
     scope: 'synthetic home only; no model requests or publication' }, null, 2));
 } finally {
-  const check = relative(resolve(tmpdir()), resolve(scratch));
+  const check = relative(tempRoot, realpathSync(scratch));
   assert.ok(check && !check.startsWith('..') && check.startsWith('open-jarvis-package-'));
   rmSync(scratch, { recursive: true, force: true });
 }

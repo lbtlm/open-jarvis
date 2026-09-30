@@ -1,39 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 (initial GitHub Release pending)
 
-- Align Chinese and English READMEs and add Japanese documentation to the npm package.
-- Require professional capability fit before employee reuse; propose a temporary specialist when the essential skills or languages do not match.
-
-- Document pnpm dlx as an optional runner for the same package and reuse package smoke checks for pnpm; retain npm as the repository package manager.
-
-- Add optional development, writing, office and video starter cards; installation defaults to no starter.
-- Allow task-specific skill bindings outside employee card suggestions.
-- Generalize orchestration and add user-controlled asset evolution guidance.
-- Include curated templates/resources in bounded asset export/import; preserve existing model preferences and user-owned cards.
-
-- Add portable export/import, employee search and task-plan previews.
-- Separate four reusable professional cards from three model families and five execution profiles.
-- Add GPT-6.1 Sol Low/Medium/High recommendations while preserving user selections.
-- Remove mandatory closeout metrics; keep scoped supervision and evidence.
-
-## Unreleased
-
-- Use one development entry across skill invocation, subagents and explicitly requested separate tasks. Make employee/model binding and dispatch evidence visible while preserving Direct work, existing approvals and controller-led acceptance.
-
-- Updated fresh-install recommendations to GPT-6 Luna/Medium and GPT-6 Sol/Medium or High; kept Standard-lane role keys and existing user choices compatible. Added GPT-6 picker options and model-aware reasoning validation.
-
-- Added documented specialist employee cards, with Agency Agents as a template source and user-approved project or personal persistence only.
-- Added the lightweight Vercel Skills CLI discovery and per-skill installation flow.
-- Added proportionate task lanes, soft reassessment, compact evidence, and bounded repair/review; allowed Terra to explore scoped unknown bugs and unified independent-review triggers.
-- Made `doctor` detect policy drift against the current package, even when old installation receipts are internally consistent; runtime reload and dispatch remain separate checks.
-- Fixed CRLF role rendering on Windows and preserved unset/inherited Fast preferences during noninteractive CLI upgrades.
-
-## 0.1.0 (package version; unpublished)
-
-- Node.js installer for the shared user configuration of modern Codex desktop and CLI.
-- Astra controller with user-selected effort; Luna, Terra, Sol and independent reviewer roles.
-- Read-only audit and doctor, installation backups, guarded upgrades and rollback.
-- Configurable model mappings and explicit runtime compatibility rules.
-- Interactive per-role model, reasoning-effort and Fast selection; recommendations remain editable.
-- npm executable with no automatic postinstall configuration changes.
+- Add a Node.js installer and `open-jarvis` executable for modern Codex desktop and CLI, distributed as a GitHub Release tarball without automatic postinstall configuration changes.
+- Provide read-only audit and doctor, protected installation backups, guarded upgrades and manifest-based rollback; detect installed-policy drift separately from runtime dispatch.
+- Keep models, reasoning effort and Fast editable per role. Recommend GPT-6 Luna/Medium for light work and GPT-6.1 Sol Low/Medium/High for simple, routine and complex work while preserving existing user selections and compatible role keys.
+- Use the user-selected controller for routing and final acceptance, with reusable executor and independent reviewer roles, explicit compatibility bindings and runtime verification boundaries.
+- Apply the same task routing across skill invocation, subagents and explicitly requested separate tasks; retain Direct work, existing approvals, scoped evidence, soft reassessment and bounded repair/review.
+- Require professional capability fit before employee reuse and propose temporary specialists when essential skills or languages are missing; document Agency Agents as a template source and Vercel Skills for focused discovery.
+- Add optional development, writing, office and video starter cards, employee search and task-plan previews. Installation defaults to no starter, and task-specific skill bindings may extend card suggestions.
+- Add bounded portable export/import for employee cards, skills and curated templates/resources, with user-controlled asset evolution and preservation of user-owned assets and model preferences.
+- Fix CRLF role rendering on Windows and preserve unset/inherited Fast preferences during noninteractive upgrades.
+- Align Chinese and English READMEs and include Japanese documentation and upgrade/rollback guidance.
+- Support npm exec and optional pnpm dlx through the same package smoke assertions while retaining npm and package-lock.json for repository dependencies.
+- Automate GitHub Releases after approved dev-to-main merges: check source/version, test one tarball across the CI matrix, bind its SHA and checksum, and verify remote installation. Reject mismatched recovery assets and prevent an older draft from superseding a higher stable version.
