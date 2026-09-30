@@ -1,11 +1,52 @@
 name: CI
+
 on:
   push:
+    branches: [dev]
   pull_request:
+    branches: [dev, main]
+  workflow_call:
+
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global npm@11.5.2 --ignore-scripts
+      - run: node scripts/release-check.mjs
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm test
+      - name: Pack once and record immutable release evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir release-bundle
+          npm pack --ignore-scripts --json --pack-destination release-bundle > release-bundle/pack.json
+          node scripts/release-prepare.mjs release-bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
   test:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -14,13 +55,35 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
       - run: npm test
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle
+      - name: Select the exact prepared tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e 'import fs from "node:fs"; import path from "node:path"; import crypto from "node:crypto"; import assert from "node:assert/strict"; const m=JSON.parse(fs.readFileSync("release-bundle/release-manifest.json")); assert.equal(m.sha,process.env.GITHUB_SHA); assert.equal(m.filename,`open-jarvis-${m.version}.tgz`); const p=path.resolve("release-bundle",m.filename); assert.equal(crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex"),m.sha256); fs.appendFileSync(process.env.GITHUB_ENV,`OPEN_JARVIS_TARBALL=${p}\n`);'
       - run: npm run test:package
       - run: npm install --global pnpm@10.18.1 --ignore-scripts
       - run: pnpm run test:package:pnpm
+  gate:
+    name: CI Gate
+    if: always()
+    needs: [prepare, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every preparation and platform check
+        env:
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: test "$PREPARE_RESULT" = success && test "$TEST_RESULT" = success

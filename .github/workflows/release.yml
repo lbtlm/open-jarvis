@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stable-release
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+  publish:
+    needs: ci
+    if: github.repository == 'lbtlm/open-jarvis'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle
+      - name: Publish or verify the exact GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release-github.mjs release-bundle
+      - name: Record public release pending remote verification
+        run: echo 'Release is public. Remote installation verification is pending; a failure retains the release and must be retried.' >> "$GITHUB_STEP_SUMMARY"
+  remote-smoke:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global npm@11.5.2 --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle
+      - name: Verify public Release installation in a clean home
+        run: node scripts/release-smoke.mjs release-bundle

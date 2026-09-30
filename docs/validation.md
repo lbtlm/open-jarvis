@@ -1,5 +1,13 @@
 # Validation — 0.1.0 candidate
 
+## 2026-09-30: GitHub Release pipeline candidate
+
+[CI run 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909), for commit `7d8ecdae7f7d08e790507f376104ef5daf2dff28`, passed preparation, all six Windows/macOS/Linux × Node 22/24 jobs, and `CI Gate`. Each platform tested the same prepared tarball with npm and pnpm. The suite contained 91 tests: 90 passed and one POSIX-only skip on Windows; 91 passed on Linux/macOS. Installation, doctor, idempotence, employee reuse, export/import, destination activation and rollback ran against synthetic homes.
+
+A scoped independent GPT-6.1 Sol/High review of the release workflows, release/package-check scripts, release tests and release/upgrade documentation reported no blocking findings. The CLI header confirmed read-only sandbox and never approvals; Fast off was explicitly requested. This was not a review of the entire installer or asset implementation, and does not supersede the incomplete asset review recorded below.
+
+These results describe the candidate snapshot, not a completed public release, a two-version upgrade test or live model dispatch. The main Release workflow separately records actual publication and public-URL installation verification. Later documentation-only changes should be assessed against their own CI results.
+
 ## 2026-09-30: optional pnpm runner
 
 Observed locally on Windows with Node.js 22.14.0 and pnpm 10.18.1. `pnpm run test:package:pnpm` passed against a locally packed tarball in isolated temporary Codex homes: distribution allowlist, audit without writes, installation, doctor, idempotence, optional employee templates and reuse, binary-resource export/import, destination activation, and rollback. It runs the same assertions as the existing npm package smoke check. The initial sandbox attempt failed with `EPERM realpath` on the user directory; the authorized run outside that outer sandbox passed, still using temporary homes and separate caches with lifecycle scripts disabled.
@@ -61,7 +69,7 @@ Windows results above were observed locally. A GitHub Actions matrix is included
 
 ## Publication status
 
-This is a local Open Jarvis release candidate targeting the public [lbtlm/open-jarvis repository](https://github.com/lbtlm/open-jarvis). The `open-jarvis` npm package has not been published. `npx open-jarvis install` becomes a public entrypoint only after the maintainer publishes the verified package under that name. Earlier validation records describe their original snapshots.
+This is an Open Jarvis release candidate for the public [lbtlm/open-jarvis repository](https://github.com/lbtlm/open-jarvis). Distribution uses versioned installer tarballs on GitHub Releases, not an npm registry publication. The public tarball installation commands work only after the corresponding Release is published. Earlier npm package checks refer to the package format and runner, not a registry publication. Earlier validation records describe their original snapshots.
 
 
 ## 2026-09-30 portable team upgrade

@@ -10,7 +10,7 @@
   "homepage": "https://github.com/lbtlm/open-jarvis#readme",
   "bugs": { "url": "https://github.com/lbtlm/open-jarvis/issues" },
   "keywords": ["codex", "jarvis", "agents", "orchestration", "cli"],
-  "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "README.ja.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
+  "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "README.zh-CN.md", "README.ja.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
   "scripts": {
     "test": "node --test",
     "test:package": "node scripts/smoke-package.mjs",

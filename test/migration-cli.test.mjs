@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { realpathSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, relative } from 'node:path';
+import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const cli = fileURLToPath(new URL('../bin/open-jarvis.mjs', import.meta.url));
 test('CLI migration preserves saved preferences before activation and reports conflicts without writes', t => {
-  const root = mkdtempSync(join(tmpdir(), 'jarvis-migration-cli-'));
-  t.after(() => { assert.ok(relative(resolve(tmpdir()), root).startsWith('jarvis-migration-cli-')); rmSync(root, {recursive:true, force:true}); });
+  const root = mkdtempSync(join(realpathSync(tmpdir()), 'jarvis-migration-cli-'));
+  t.after(() => { assert.ok(relative(realpathSync(tmpdir()), root).startsWith('jarvis-migration-cli-')); rmSync(root, {recursive:true, force:true}); });
   const source = join(root, 'source'), target = join(root, 'target');
   mkdirSync(join(source, 'jarvis'), {recursive:true});
   const model = {terra:{model:'gpt-6-sol',effort:'low',fast:true}};
