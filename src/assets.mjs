@@ -68,7 +68,7 @@ function models(value) {
   if (!object(value)) fail('Models must be an object.');
   for (const [role, settings] of Object.entries(value)) {
     if (!ROLES.has(role) || !object(settings) || !Object.keys(settings).length || Object.keys(settings).some(key => !['model', 'effort', 'fast'].includes(key))) fail(`Invalid portable model settings for ${role}.`);
-    if (Object.hasOwn(settings, 'model') && (typeof settings.model !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(settings.model))) fail(`Invalid model for ${role}.`);
+    if (Object.hasOwn(settings, 'model') && (typeof settings.model !== 'string' || settings.model.length > 128 || !/^[a-zA-Z0-9][a-zA-Z0-9._-]*(?:\/[a-zA-Z0-9][a-zA-Z0-9._-]*)?$/.test(settings.model))) fail(`Invalid model for ${role}.`);
     if (Object.hasOwn(settings, 'effort') && !EFFORTS.has(settings.effort)) fail(`Invalid effort for ${role}.`);
     if (Object.hasOwn(settings, 'fast') && typeof settings.fast !== 'boolean') fail(`Invalid Fast preference for ${role}.`);
   }
