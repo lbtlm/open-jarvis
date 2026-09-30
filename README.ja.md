@@ -1,87 +1,97 @@
-[中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
+<h1 align="center">Open Jarvis</h1>
 
-# Open Jarvis
+<p align="center">専門スタッフとの協働。あなたの設定。再利用できる成果。</p>
 
-Open Jarvis は、Codex Desktop と CLI で統括エージェントが専門スタッフとの協働と資産の再利用を管理するためのワークフローです。
-開発、執筆、事務、動画などの作業で、統括が受け入れ条件を定め、適任のスタッフを選び、実行を監督して最終確認を行います。
-スタッフの専門職と実行時のモデル設定は別に扱い、ユーザーが選んだモデル、推論の強度、Fast 設定を優先します。
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
+</p>
 
-現在は **0.1.0 プレビュー版**で、GitHub Release はまだありません。GitHub Release で配布し、npm には公開しません。GitHub リポジトリ：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
-3 言語の README は同じ機能を説明していますが、CLI とすべての参考文書が多言語化されているわけではありません。
-公式認証、モデル料金の比較、利用枠への効果、一定の削減率を保証するものではありません。
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="docs/compatibility.md"><img src="https://img.shields.io/badge/Node.js-22%2B-43853d" alt="Node.js 22+"></a>
+  <a href="https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml"><img src="https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml/badge.svg?branch=main" alt="Release pipeline on main"></a>
+  <a href="https://github.com/lbtlm/open-jarvis/releases"><img src="https://img.shields.io/badge/download-GitHub_Releases-24292f" alt="GitHub Releases"></a>
+</p>
 
-## インストールと使い始め方
+Open Jarvis は **Codex Desktop と CLI** に統括エージェントが監督する協働の手順を提供します。開発、執筆、事務、動画の作業で、受け入れ条件を定め、適任のスタッフを選び、実行を確認し、承認を得て成果を再利用できます。
 
-Node.js **22+**（npm/npx を含む）と、独立したサブエージェントのロール設定に対応し、ログイン済みの Codex が必要です。
-インストール先は `--home`、`CODEX_HOME`、`~/.codex` の順で決まります。
-Desktop と CLI が同じ Codex home を使う場合、インストールは 1 回で十分です。
+[クイックスタート](#quick-start) · [主な機能](#capabilities) · [作業の流れ](#workflow) · [スタッフと設定](#employees-and-settings) · [コマンド](#commands) · [再利用資産](#assets) · [FAQ](#faq) · [検証状況](#verification) · [貢献](#contributing)
 
-現在のプレビュー版では、内容を確認したローカルパッケージをターミナルの作業ディレクトリに置き、次を実行します。
+<a id="quick-start"></a>
 
-```sh
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
-```
+## クイックスタート
 
-ターミナルのウィザードで、統括と実行ロールのモデル、推論の強度、Fast、スタッフのテンプレートを選べます。
-テンプレートの既定値は `none` です。まず協働ルールを導入し、作業に応じてスタッフを選ぶことができます。
-`--yes` は対話なしでインストールし、既存の設定を維持します。新規インストールでは Astra / High を推奨します。
-Fast は独立した設定で、既定ではオフです。Ultra の自動設定や、ユーザーの統括を Sol に自動変更することはありません。
+**Node.js 22+**（npm/npx を含む）と、独立したサブエージェントのロール設定に対応するログイン済みの Codex が必要です。Desktop と CLI が同じ Codex home を使う場合、インストールは 1 回で十分です。
 
-GitHub Release に対応するパッケージが公開された後は、その URL から直接インストールできます。
+[GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) から公開済みのバージョンを選んでください。以下は **0.1.0** の例です。別のバージョンでは、番号、URL、ファイル名を合わせて変更します。該当する成果物が利用できない場合は、下記の確認済みローカルパッケージを使ってください。
 
 ```sh
 npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-以下の例はローカルパッケージを指定します。現在は確認済みの候補パッケージを使い、Release 公開後は対応するパッケージを作業ディレクトリにダウンロードして使えます。
-例のバージョンは 0.1.0 です。別のバージョンを使う場合、URL、ファイル名、バージョン番号を合わせて変更してください。
-ソースのクローン、Jarvis のグローバルインストール、Node スクリプトの手動実行は不要です。
+**ターミナルのウィザードで設定を選びます：** 統括と実行ロールのモデル、推論の強度、Fast、スタッフのテンプレート。既定のテンプレートは `none` なので、協働ルールから始めて必要なスタッフを追加できます。既存の設定を優先し、新規導入の統括には Astra / High を推奨します。Fast は別に選び、既定ではオフです。Ultra の自動有効化や Sol への自動切り替えは行いません。
 
-インストール後、新しい Codex タスクで、例えば次のように依頼します。
-
-> Jarvis の手順でこの作業を進めてください。統括が受け入れ条件を定め、能力に合うスタッフを選び、実行を監督して最終確認してください。実際のエージェント ID と実行時設定の証拠も記録してください。
-
-新しいセッションは設定の読み込みに役立ちますが、ネイティブロールの有効化を保証しません。実際の割り当ても確認してください。
-インストール前には `audit` で変更を確認でき、導入後は `doctor` で静的な検査ができます。
-
-## pnpm を使う場合
-
-既定の案内は npx です。すでに pnpm を使っている場合は、同じパッケージとウィザードを利用できます。
-
-```sh
-pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
-```
-
-GitHub Release 公開後は、パッケージの URL を直接指定することもできます。
+<details>
+<summary>pnpm の代替手順と確認済みローカルパッケージ</summary>
 
 ```sh
 pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-以下のローカルパッケージの例では、`npx --package ./open-jarvis-0.1.0.tgz open-jarvis` を
-`pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` に置き換え、コマンドと引数を維持してください。
-どちらも同じ Codex home、スタッフ、資産を使います。二重のインストールや別の資産保管先は不要です。
-pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性の説明（英語）](docs/compatibility.md)を参照してください。
+確認済みのパッケージを現在のディレクトリに置き、どちらかの実行方法を使います。
 
-## よく使うコマンド
+```sh
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
+```
 
-| コマンド | 用途 | 例（ローカルパッケージ） |
-| --- | --- | --- |
-| `audit` | 書き込まずにインストール変更を確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis audit` |
-| `install` | バックアップを保護して導入・更新 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --starter none` |
-| `doctor` | 導入済みファイルを静的に検査 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis doctor` |
-| `rollback` | マニフェストを使って 1 回分の導入を戻す | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis rollback --manifest /path/to/manifest.json` |
-| `employees` | スタッフカードを検索、またはテンプレート追加を確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --query writing` |
-| `plan` | スタッフ、スキル、実行プロファイルを確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard` |
-| `export` | 新しい資産アーカイブを作成 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz` |
-| `import` | 適用前に資産アーカイブを確認 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz` |
+両方とも同じ Codex home、スタッフ、資産を使います。パッケージは GitHub Releases で配布し、**npm registry には公開していません**。依存関係は npm から取得する場合があり、完全なオフライン導入は保証しません。導入先は `--home`、`CODEX_HOME`、`~/.codex` の順で決まります。`--yes` は対話なしで導入し、既存の設定を維持します。pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性（英語）](docs/compatibility.md)を参照してください。
 
-`/path/to/manifest.json` は例示用のパスです。実際のインストールマニフェストに置き換えてください。
-`--home PATH` は Codex home、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
-全オプションは `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` で確認できます。
-`audit` と `doctor` はモデルへのリクエストを行わず、スタッフが実行されたことも証明しません。
+</details>
 
-## 統括・専門スタッフ・モデル
+導入後、新しい Codex タスクで、例えば次のように依頼します。
+
+> Jarvis の手順でこの作業を進めてください。統括が受け入れ条件を定め、能力に合うスタッフを選び、実行を監督して最終確認してください。実際のエージェント ID と実行時設定の証拠も記録してください。
+
+導入前は `audit` で変更を確認し、導入後は `doctor` で静的に検査できます。新しいセッションは設定の読み込みに役立ちますが、ロールと実行時設定は実際の割り当てでも確認が必要です。
+
+<a id="capabilities"></a>
+
+## 主な機能
+
+- **さまざまな分野で協働。** 開発、執筆、事務、動画の成果物、言語、手法、ツールに合う専門スタッフを選びます。
+- **割り当てを検証可能に。** 範囲、受け入れ条件、要求設定、実際のエージェント ID、実行時の証拠を明示します。
+- **作業に合わせてスキルを選択。** 専門職をモデルやスキル一覧に恒久的に固定せず、適切な手法を使います。
+- **承認を得て成果を再利用。** 検証した経験、スキル、知識、好み、テンプレートを保存し、移行は適用前に確認します。
+
+<a id="workflow"></a>
+
+## 作業の流れ
+
+```mermaid
+flowchart TD
+  A["ユーザーの依頼"] --> B{"質問・小さな修正？"}
+  B -->|はい| C["統括が直接処理"]
+  B -->|いいえ| D["承認済みの適任者を選択"]
+  D -->|適任者なし| E["ユーザーが新スタッフを承認"]
+  D -->|適任者あり| F["作業設定を選び割り当てを検証"]
+  E --> F
+  F --> G["スタッフが証拠を提出"]
+  C --> H["統括が最終確認"]
+  G --> H
+  H -->|新たな再利用価値がある場合| I["ユーザーが保存を決定"]
+```
+
+### 四つの選択を分ける
+
+- **スタッフ：** 能力、範囲、証拠を記した再利用可能な専門職カード。常駐サービスやネイティブロールの登録ではありません。
+- **スキル：** 今回の作業手法。ユーザーの指定を優先し、次に適した導入済みスキルを探します。不足する場合は外部検索を行えますが、導入には別途承認が必要です。
+- **実行設定：** 作業ごとに選ぶモデル、推論の強度、Fast。実行時の確認が必要で、スタッフの身分に恒久的には固定しません。
+- **保存資産：** 検証し、ユーザーの承認で保存した成果。作業の承認は恒久保存の承認ではなく、バックグラウンドでの自動学習は行いません。
+
+<a id="employees-and-settings"></a>
+
+## スタッフと実行設定
 
 通常の質問、単一手順の調査、すぐに確認できる小さな修正は、統括が直接処理します。
 それ以外は、必要な分野、成果物、言語、手法とツールを先に確認し、能力が一致する承認済みスタッフから再利用を優先します。
@@ -104,7 +114,8 @@ Fast はモデルや推論の強度とは別に選びます。モデルの利用
 実行担当は再帰的に委派しません。独立レビューは明示されたリスクや証拠に応じて行い、全タスクで必須ではありません。
 必要なモデル、Fast、Reviewer の読み取り専用権限を維持できない場合、その割り当てが実行できないことを報告します。
 
-## スタッフとスキル
+<details>
+<summary>スタッフのテンプレートとスキル計画</summary>
 
 | テンプレート | 候補スタッフ |
 | --- | --- |
@@ -131,12 +142,53 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --
 Jarvis の導入は全スキルの一括導入ではなく、Office、編集、プラグイン、クラウドアカウントの利用能力も付与しません。
 スタッフカードはファイル資産で、常駐プロセスではありません。[スタッフの運用規約（英語）](payload/skills/jarvis-orchestrator/references/employees.md)を参照してください。
 
-## 資産の改善と移行
+</details>
+
+<a id="commands"></a>
+
+## よく使うコマンド
+
+以下は**コマンドの末尾部分**で、単独では実行できません。次の完全な実行プレフィックスに追加してください。
+
+```sh
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis
+```
+
+どの末尾部分も、`pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis` に追加できます。確認済みローカルパッケージでは、`npx --package ./open-jarvis-0.1.0.tgz open-jarvis` または `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` を使い、末尾部分はそのままにします。
+
+| コマンドの末尾部分 | 用途 |
+| --- | --- |
+| `audit` | 書き込まずにインストール変更を確認 |
+| `install --starter none` | バックアップを保護して導入・更新 |
+| `doctor` | 導入済みファイルを静的に検査 |
+| `rollback --manifest /path/to/manifest.json` | マニフェストを使って 1 回分の導入を戻す |
+| `employees --query writing` | スタッフカードを検索、またはテンプレート追加を確認 |
+| `plan --employee nova-writer --difficulty standard` | スタッフ、スキル、実行プロファイルを確認 |
+| `export --out ./my-assets.jarvis.json.gz` | 新しい資産アーカイブを作成 |
+| `import --from ./my-assets.jarvis.json.gz` | 適用前に資産アーカイブを確認 |
+
+例えば、静的な検査は次のように実行します。
+
+```sh
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis doctor
+```
+
+`/path/to/manifest.json` は例示用のパスです。実際のインストールマニフェストに置き換えてください。
+`--home PATH` は Codex home、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
+全オプションは `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` で確認できます。
+`audit` と `doctor` はモデルへのリクエストを行わず、スタッフが実行されたことも証明しません。
+
+<a id="assets"></a>
+
+## 再利用できる資産
 
 再利用できる成果は「候補を作る → 検証する → ユーザーが決める → 保存・更新する → 次回再利用する」という手順で蓄積します。
 スタッフの経験、スキル、知識、好み、テンプレートを保存できます。経験には実際の証拠と適用条件が必要です。
 タスクや臨時採用の承認は、恒久保存の承認ではありません。モデル学習や長期指示の自動書き換えも行いません。
 毎回の採点、振り返り、統計は必須ではありません。[資産の改善手順（中国語）](docs/asset-evolution.md)を参照してください。
+
+<details>
+<summary>移行コマンド・パス・上限</summary>
 
 個人資産は Codex home の `jarvis/`、プロジェクト資産は `.jarvis/` に保存します。
 エクスポートにはスタッフ、知識、好み、resources、選択したスキルのディレクトリ、モデル設定を含みます。
@@ -159,6 +211,10 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/code
 動画などの大きなメディアは別途移行します。本文の自動匿名化は行わないため、共有前に確認してください。hash は完全性の検査で、出所を証明する署名ではありません。
 詳しくは[資産の運用手順（英語）](payload/skills/jarvis-orchestrator/references/assets.md)を参照してください。
 
+</details>
+
+<a id="faq"></a>
+
 ## よくある質問
 
 **統括は変更されますか？** 既存のモデル、推論の強度、Fast 設定は維持されます。新規導入では Astra / High を推奨します。
@@ -173,15 +229,28 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/code
 **更新とロールバックの手順は？** `audit` の後に `install` を実行し、戻す場合はその導入のマニフェストを `rollback --manifest` に指定します。
 導入とロールバックは自身の設定を管理し、ユーザーのスタッフや資産を削除しません。後続の変更と競合するとロールバックを拒否します。機密を含み得るバックアップは公開しないでください。
 
-## 開発・公開・更新
+<a id="verification"></a>
+
+## 検証状況と現在の制限
+
+[CI 実行 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909) は Windows/macOS/Linux × Node 22/24 の全ジョブ、両パッケージ実行方法、CI Gate に合格しました。最終テストは **91 件**で、Windows は **90 件成功 / POSIX 専用 1 件スキップ**、macOS と Linux は **91 件成功**です。
+
+**リリースコードの限定的なレビュー**は合格しました。以前の `assets.mjs` の独立レビューは未完了であり、全面的なセキュリティ監査ではありません。リンク先の CI は、実際の 2 バージョン間のアップグレードや公開 Release からの導入を検証していません。公開と公開 URL からの導入結果は [Release ワークフロー](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml)で確認してください。静的検査はモデルの実動作を証明しません。
+
+3 言語の完全版 README は同じ機能を説明します。CLI と詳しい参考文書の大半は未翻訳で、リンク先の言語を明記しています。[検証記録（英語）](docs/validation.md)と[公開手順（英語）](docs/releasing.md)を参照してください。
+
+<a id="contributing"></a>
+
+## 貢献と公開
 
 機能開発はブランチで行い、PR を通じて `dev` にマージします。公開時は `dev` → `main` のリリース PR を作成します。
 `main` へのマージが自動 CI/CD の承認になります。ワークフローのチェックに合格するとバージョンタグと GitHub Release のパッケージを生成し、二度目の公開承認は求めません。
-ワークフローが失敗した場合、そのバージョンは公開済みとは扱えません。マージ記録と Release の成果物をそれぞれ確認してください。
+ワークフローが失敗しても、公開済みの Release が導入検証待ちで残る場合があります。実行サマリーと Release の成果物をそれぞれ確認してください。
 パッケージは GitHub Release で配布しますが、依存関係は registry から取得する場合があり、完全なオフライン導入は保証しません。
 公開ルールは[公開手順（英語）](docs/releasing.md)、バージョン選択・更新・ロールバックは[アップグレードの説明（英語）](docs/upgrading.md)を参照してください。
 
-## コントリビューションと現在の制限
+<details>
+<summary>貢献者向けの検査</summary>
 
 保守作業では npm と `package-lock.json` を使用し、pnpm のロックファイルは追加しません。関連する開発チェックは次のとおりです。
 
@@ -193,7 +262,8 @@ npm run test:package
 pnpm run test:package:pnpm
 ```
 
-Windows のローカル環境で npm/pnpm の導入、移行、ロールバックを検証済みです。CI は Windows、macOS、Linux の Node 22/24 向けに設定されています。
-設定済みのマトリクスは、全環境での成功を意味しません。独立した資産コードレビューはネットワークの問題で未完了のため、公開条件をすべて満たしたとはしていません。
-静的検査ではモデルの実動作は証明できません。[検証記録（英語）](docs/validation.md)と[公開手順（英語）](docs/releasing.md)を参照してください。
+</details>
+
 貢献は [CONTRIBUTING（英語）](CONTRIBUTING.md)、安全上の問題は [SECURITY（英語）](SECURITY.md) を参照してください。ライセンスは [MIT](LICENSE) です。
+
+[English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)

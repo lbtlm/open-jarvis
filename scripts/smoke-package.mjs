@@ -68,9 +68,9 @@ try {
   assert.ok(paths.includes('payload/skills/jarvis-orchestrator/references/employee-card.md'));
   assert.ok(paths.includes('payload/skills/jarvis-orchestrator/references/assets.md'));
   assert.ok(paths.includes('payload/employees/nova-writer.md'));
-  for (const file of ['README.md', 'README.en.md', 'README.ja.md']) assert.ok(paths.includes(file));
+  for (const file of ['README.md', 'README.en.md', 'README.zh-CN.md', 'README.ja.md']) assert.ok(paths.includes(file));
   for (const path of paths) {
-    assert.match(path, /^(bin\/|src\/|payload\/|docs\/|README(?:\.(?:en|ja))?\.md$|LICENSE$|CHANGELOG\.md$|CONTRIBUTING\.md$|SECURITY\.md$|package\.json$)/);
+    assert.match(path, /^(bin\/|src\/|payload\/|docs\/|README(?:\.(?:en|zh-CN|ja))?\.md$|LICENSE$|CHANGELOG\.md$|CONTRIBUTING\.md$|SECURITY\.md$|package\.json$)/);
     assert.doesNotMatch(path, /(?:^|\/)(?:auth\.json|\.env|node_modules|jarvis-state|\.local|sessions)(?:\/|$)/);
   }
   const invokeAt = (targetHome, args) => JSON.parse(execManager(pnpm ? [

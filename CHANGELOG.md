@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (initial GitHub Release pending)
+## 0.1.0
 
 - Add a Node.js installer and `open-jarvis` executable for modern Codex desktop and CLI, distributed as a GitHub Release tarball without automatic postinstall configuration changes.
 - Provide read-only audit and doctor, protected installation backups, guarded upgrades and manifest-based rollback; detect installed-policy drift separately from runtime dispatch.
@@ -11,6 +11,6 @@
 - Add optional development, writing, office and video starter cards, employee search and task-plan previews. Installation defaults to no starter, and task-specific skill bindings may extend card suggestions.
 - Add bounded portable export/import for employee cards, skills and curated templates/resources, with user-controlled asset evolution and preservation of user-owned assets and model preferences.
 - Fix CRLF role rendering on Windows and preserve unset/inherited Fast preferences during noninteractive upgrades.
-- Align Chinese and English READMEs and include Japanese documentation and upgrade/rollback guidance.
+- Use English as the primary README, with Chinese and Japanese documentation, a concise quick start, and upgrade/rollback guidance.
 - Support npm exec and optional pnpm dlx through the same package smoke assertions while retaining npm and package-lock.json for repository dependencies.
 - Automate GitHub Releases after approved dev-to-main merges: check source/version, test one tarball across the CI matrix, bind its SHA and checksum, and verify remote installation. Reject mismatched recovery assets and prevent an older draft from superseding a higher stable version.

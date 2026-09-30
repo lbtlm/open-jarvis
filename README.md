@@ -1,122 +1,133 @@
-[中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
+<h1 align="center">Open Jarvis</h1>
 
-# Open Jarvis
+<p align="center">Specialist collaboration. Your settings. Reusable results.</p>
 
-Open Jarvis 为 Codex Desktop 和 CLI 提供由主控监督的员工协作与资产复用流程。
-它适用于开发、写作、办公、视频等任务：主控定义验收、选择合适的专业员工、监督执行并最终验收。
-员工的专业身份与任务的模型档位分开，用户选择的模型、思考强度和 Fast 设置始终优先。
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
+</p>
 
-当前为 **0.1.0 预览版**，尚无 GitHub Release。发行通过 GitHub Release，不发布到 npm。GitHub 仓库：[lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis)。
-三语 README 介绍同一套功能；CLI 和全部参考文档尚未完成本地化。
-本项目不承诺官方认证、模型费率比较、额度收益或固定节省比例。
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="docs/compatibility.md"><img src="https://img.shields.io/badge/Node.js-22%2B-43853d" alt="Node.js 22+"></a>
+  <a href="https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml"><img src="https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml/badge.svg?branch=main" alt="Release pipeline on main"></a>
+  <a href="https://github.com/lbtlm/open-jarvis/releases"><img src="https://img.shields.io/badge/download-GitHub_Releases-24292f" alt="GitHub Releases"></a>
+</p>
 
-## 安装与开始使用
+Open Jarvis brings a controller-supervised workflow to **Codex Desktop and CLI**. Use it for development, writing, office work and video tasks: define acceptance, choose capable specialists, verify their execution and keep useful results with your approval.
 
-需要 Node.js **22+**（提供 npm/npx），以及已登录、支持独立子代理角色配置的 Codex。
-安装目标依次取 `--home`、`CODEX_HOME`、`~/.codex`。
-Desktop 和 CLI 共用一个 Codex home 时只需安装一次。
+[Quick start](#quick-start) · [Capabilities](#capabilities) · [Workflow](#workflow) · [Employees & settings](#employees-and-settings) · [Commands](#commands) · [Reusable assets](#assets) · [FAQ](#faq) · [Verification](#verification) · [Contributing](#contributing)
 
-当前请将审阅过的本地安装包放在终端当前目录，然后运行：
+<a id="quick-start"></a>
 
-```sh
-npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
-```
+## Quick start
 
-终端向导让你选择主控与执行角色的模型、思考强度、Fast，以及员工模板。
-模板默认是 `none`，可以先安装协作规则，再按实际任务选择员工。
-`--yes` 使用非交互安装并保留已有偏好；全新安装推荐 Astra / High。
-Fast 独立设置，默认关闭，不会自动开启 Ultra 或将用户主控改为 Sol。
+Requires **Node.js 22+** (npm/npx included) and a signed-in Codex client with standalone subagent role configuration. Desktop and CLI share one installation when they use the same Codex home.
 
-GitHub Release 发布并包含对应安装包后，才可直接使用远程安装命令：
+Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.1.0**; update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
 
 ```sh
 npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-下文统一使用本地包前缀：现在使用审阅过的候选包；Release 发布后，也可先下载对应安装包到当前目录。
-示例以 0.1.0 为例，使用其他版本时请同步替换 URL、文件名和版本号。
-无需克隆源码、全局安装 Jarvis 或手动运行 Node 脚本。
+**Choose your setup in the terminal wizard:** controller and worker models, reasoning effort, Fast, and an employee starter. The starter defaults to `none`, so you can begin with the collaboration rules and add specialists as needed. Existing preferences take priority; fresh installs recommend Astra / High for the controller. Fast is separate and defaults to off. Ultra and a switch to Sol are never enabled automatically.
 
-安装后打开新的 Codex 任务，例如：
-
-> 按 Jarvis 流程完成这个任务。主控定义验收，按能力选择员工，监督执行并最终验收；记录真实代理 ID 和运行时设置证据。
-
-新会话有助于加载配置，但不保证原生角色已经生效；实际派发仍需核验。
-安装前可以先用 `audit` 预览变更。安装后的静态检查使用 `doctor`。
-
-## pnpm 可选入口
-
-npx 是默认入口。已有 pnpm 的用户可以选择同一个包和安装向导：
-
-```sh
-pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
-```
-
-GitHub Release 发布后也可直接使用远程包：
+<details>
+<summary>pnpm alternative and reviewed local packages</summary>
 
 ```sh
 pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis install
 ```
 
-后续本地包示例可将 `npx --package ./open-jarvis-0.1.0.tgz open-jarvis`
-换为 `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis`，并保留命令及参数。
-两者共用 Codex home、员工和资产，不必安装两遍或建立第二套资产库。
-pnpm **10.18.1** 已在 Windows 本地实测；支持范围见[兼容性说明（英文）](docs/compatibility.md)。
+For a reviewed tarball in your current directory, use either runner:
 
-## 常用命令
+```sh
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
+```
 
-| 命令 | 用途 | 示例（本地包入口） |
+Both runners use the same Codex home, employees and assets. The package is distributed through GitHub Releases, **not the npm registry**; dependencies may still come from npm, so installation is not necessarily offline. Installation targets `--home`, then `CODEX_HOME`, then `~/.codex`. `--yes` is noninteractive and preserves existing preferences. pnpm **10.18.1** has been tested locally on Windows; see [compatibility (English)](docs/compatibility.md).
+
+</details>
+
+After installation, open a new Codex task and try:
+
+> Complete this task using Jarvis. Have the controller define acceptance, select specialists by capability, supervise execution and accept the result. Record actual agent IDs and evidence of runtime settings.
+
+Use `audit` to preview installation changes and `doctor` for static checks. A new session helps load configuration; an actual dispatch must still verify roles and runtime settings.
+
+<a id="capabilities"></a>
+
+## Capabilities
+
+- **Work across domains.** Match specialists to the deliverable, language, methods and tools needed for development, writing, office or video work.
+- **Make dispatch reviewable.** Keep scope, acceptance, requested settings, real agent IDs and runtime evidence visible.
+- **Keep skills task-specific.** Use appropriate methods without permanently tying a profession to a model or skill list.
+- **Reuse with approval.** Retain validated employee experience, skills, knowledge, preferences and templates; preview migration before applying it.
+
+<a id="workflow"></a>
+
+## Workflow
+
+```mermaid
+flowchart TD
+  A["Request"] --> B{"Direct question or tiny edit?"}
+  B -->|Yes| C["Controller handles it"]
+  B -->|No| D["Match approved specialist"]
+  D -->|No match| E["Owner approves new employee"]
+  D -->|Match| F["Choose task settings and verify dispatch"]
+  E --> F
+  F --> G["Worker submits evidence"]
+  C --> H["Controller accepts result"]
+  G --> H
+  H -->|New reusable value| I["Owner decides what to retain"]
+```
+
+### Four separate choices
+
+- **Employee:** a reusable professional card describing capability, scope and evidence. It is not a resident service or native-role registration.
+- **Skill:** the method for this task. Explicit user requests come first, then suitable installed skills; missing methods may require an external search and separate installation approval.
+- **Execution settings:** model, effort and Fast selected for the assignment, with actual runtime verification. Employee identity does not permanently lock them.
+- **Retained assets:** validated results saved for later use only with owner approval. Task approval is not permanent-retention approval; there is no background automatic training.
+
+<a id="employees-and-settings"></a>
+
+## Employees and execution settings
+
+The controller handles ordinary questions, single-step lookups and tiny, directly verifiable edits.
+For other work, it first checks the required domain, deliverable, language, methods and tools, then prefers reuse among approved specialists whose capabilities match.
+Approval, availability and a fixed model do not establish professional competence.
+If no specialist matches, the controller proposes a temporary employee with responsibilities, skills and settings, then dispatches after user approval.
+It does not force an unrelated employee into the task or rename one to imply expertise.
+
+| Execution profile | Recommended model / effort | Suitable work |
 | --- | --- | --- |
-| `audit` | 只读预览安装变更 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis audit` |
-| `install` | 安装或升级，并保护备份 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --starter none` |
-| `doctor` | 静态检查已安装文件 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis doctor` |
-| `rollback` | 按清单恢复一次安装 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis rollback --manifest /path/to/manifest.json` |
-| `employees` | 检索员工卡或预览模板初始化 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --query writing` |
-| `plan` | 预览员工、技能及执行档位 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard` |
-| `export` | 写入新的资产归档 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz` |
-| `import` | 预览资产归档，确认后导入 | `npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz` |
+| `controller` | GPT-6 Astra / High | Coordination, supervision and final acceptance |
+| `luna` | GPT-6 Luna / Medium | Clear, small tasks with low risk |
+| `simple` | GPT-6.1 Sol / Low | Simple implementations with known mechanisms |
+| `terra` | GPT-6.1 Sol / Medium | Routine tasks and scoped investigation of unknown failures |
+| `sol` | GPT-6.1 Sol / High | Contract changes, complex semantics or critical behavior |
+| `reviewer` | GPT-6.1 Sol / High | Independent review triggered by risk or evidence |
 
-`/path/to/manifest.json` 是占位路径，请换成实际安装清单。
-`--home PATH` 选择 Codex home；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` 查看。
-`audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
+These are recommendations; existing user choices take priority. `terra` is a compatibility key, not a GPT-6 Terra product.
+Fast is selected separately from model and effort. Model access, permissions and service settings require runtime verification.
+The default is one executor. At most three subagents run concurrently, including Reviewer and excluding the controller, subject to lower user or global limits.
+Executors do not delegate recursively. Independent review is triggered by specified risks or evidence, rather than required for every task.
+If necessary model, Fast or Reviewer read-only settings cannot be preserved, report that dispatch as blocked.
 
-## 主控、专业员工与模型
+<details>
+<summary>Starter cards and skill planning</summary>
 
-普通问答、单步查询和微小可验证修改由主控直接处理。
-其他任务先判断所需领域、交付物、语言以及方法和工具，再在能力匹配的已批准员工中优先复用。
-批准状态、空闲状态或固定模型都不能证明专业能力。
-缺少匹配岗位时，主控提出临时新员工，说明职责、技能与设置，获用户批准后派发。
-不会强行复用无关员工，也不会通过改名宣称已有能力。
-
-| 执行档位 | 推荐模型 / 思考强度 | 适用任务 |
-| --- | --- | --- |
-| `controller`（主控） | GPT-6 Astra / High | 调度、监督与最终验收 |
-| `luna` | GPT-6 Luna / Medium | 明确且低风险的小任务 |
-| `simple` | GPT-6.1 Sol / Low | 已知机制的简单实现 |
-| `terra` | GPT-6.1 Sol / Medium | 常规任务及范围内未知故障探索 |
-| `sol` | GPT-6.1 Sol / High | 契约变化、复杂语义或关键行为 |
-| `reviewer` | GPT-6.1 Sol / High | 风险或证据触发的独立复核 |
-
-这些是推荐设置，已有用户选择优先。`terra` 是兼容键，不代表 GPT-6 Terra 产品。
-Fast 与模型和思考强度分开选择；可用模型、权限和服务设置需在实际运行时核验。
-默认一个执行者；同时运行的子代理最多三个，包含 Reviewer、不含主控，并服从更低的用户或全局限额。
-执行者不递归委派。独立复核由明确风险或证据触发，并非每个任务都安排。
-无法保留必要模型、Fast 或 Reviewer 只读权限时，应报告该派发阻塞。
-
-## 员工与技能
-
-| 模板 | 候选员工 |
+| Starter | Candidate employees |
 | --- | --- |
-| `none` | 不添加员工卡 |
-| `development` | Iris（前端）、Atlas（后端）、Quinn（QA）、Sentry（复核） |
-| `writing` | Nova（写作） |
-| `office` | Clara（办公） |
-| `video` | Frame（视频） |
+| `none` | No employee cards added |
+| `development` | Iris (frontend), Atlas (backend), Quinn (QA), Sentry (review) |
+| `writing` | Nova (writing) |
+| `office` | Clara (office work) |
+| `video` | Frame (video) |
 
-模板只是候选卡，不等于已雇佣、已加载技能或有经验证明。
-旧命令 `employees --init --yes` 仍兼容，默认添加缺失的开发模板卡。
-例如，预览写作候选卡后再明确写入：
+Starters provide candidate cards; they do not mean employees are hired, skills are loaded or experience is verified.
+The older `employees --init --yes` command remains compatible and defaults to adding missing development cards.
+For example, preview writing candidates before explicitly writing them:
 
 ```sh
 npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter writing
@@ -124,25 +135,66 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis employees --init --starter wri
 npx --package ./open-jarvis-0.1.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
-`my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
-`plan` 不派发员工、不读取技能正文，也不能证明技能已加载。
-技能选择先遵循用户显式指定，再找已安装的匹配技能，仍缺少时才按需搜索外部技能。
-员工卡的技能建议不是白名单；`--skill` 可临时绑定卡外技能，不会永久改卡。
-安装 Jarvis 不会全库安装技能，也不会赋予 Office、剪辑、插件或云账号能力。
-员工卡是文件资产，不是常驻进程。详见[员工约定（英文）](payload/skills/jarvis-orchestrator/references/employees.md)。
+`my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
+`plan` does not dispatch employees, read skill bodies or prove that skills have loaded.
+Follow explicitly requested skills first, then look for suitable installed skills; search externally only when something is still missing.
+A card's suggestions are not a whitelist. `--skill` can temporarily bind a skill outside the card without permanently editing it.
+Installing Jarvis does not install a whole skill catalog or provide Office, editing, plugin or cloud-account capabilities.
+An employee card is a file asset, not a resident process. See [employee conventions (English)](payload/skills/jarvis-orchestrator/references/employees.md).
 
-## 资产自进化与迁移
+</details>
 
-可复用成果按“形成候选 → 验证 → 用户决定 → 保存或更新 → 后续复用”积累。
-可以保留员工经验、技能、知识、偏好和模板素材；经验须有实际证据和适用条件。
-任务批准或临时雇佣不等于永久保存批准；不会自动训练模型或改写长期指令。
-无需每次强制评分、复盘或统计。详见[资产自进化（中文）](docs/asset-evolution.md)。
+<a id="commands"></a>
 
-个人资产位于 Codex home 的 `jarvis/`，项目资产位于 `.jarvis/`。
-导出包括员工、知识、偏好、resources、选中技能目录和模型偏好。
-`jarvis/skills.json` 显式登记支持技能依赖；不会自动扫描所有技能、插件或解析全部正文依赖。
-默认技能根目录依次是项目 `.agents/skills`、项目 `.codex/skills`、home `skills`、home 同级 `.agents/skills`。
-重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
+## Common commands
+
+The entries below are **command suffixes**, not standalone shell commands. Append one to the full runner prefix:
+
+```sh
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis
+```
+
+For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.1.0.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis` and keep the suffix unchanged.
+
+| Command suffix | Purpose |
+| --- | --- |
+| `audit` | Preview installation changes without writing |
+| `install --starter none` | Install or upgrade with protected backups |
+| `doctor` | Statically inspect installed files |
+| `rollback --manifest /path/to/manifest.json` | Restore one installation using its manifest |
+| `employees --query writing` | Search employee cards or preview starter initialization |
+| `plan --employee nova-writer --difficulty standard` | Preview an employee, skills and execution profile |
+| `export --out ./my-assets.jarvis.json.gz` | Write a new asset archive |
+| `import --from ./my-assets.jarvis.json.gz` | Preview an archive before applying it |
+
+For example, run the static check with:
+
+```sh
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.0/open-jarvis-0.1.0.tgz open-jarvis doctor
+```
+
+`/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
+`--home PATH` selects the Codex home; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
+Use `npx --package ./open-jarvis-0.1.0.tgz open-jarvis --help` for all options.
+`audit` and `doctor` make no live model requests and do not prove an employee has run.
+
+<a id="assets"></a>
+
+## Reusable assets
+
+Reusable results follow a small loop: propose a candidate → validate → let the user decide → save or update → reuse later.
+Employee experience, skills, knowledge, preferences and templates can be retained; experience requires evidence and applicable conditions.
+Approval for a task or temporary hire is not approval for permanent retention. This does not train models or automatically rewrite long-term instructions.
+Scores, retrospectives and statistics are not compulsory after every task. See [asset evolution (Chinese)](docs/asset-evolution.md).
+
+<details>
+<summary>Migration commands, paths and limits</summary>
+
+Personal assets live under `jarvis/` in the Codex home; project assets live under `.jarvis/`.
+Export includes employees, knowledge, preferences, resources, selected skill directories and model preferences.
+`jarvis/skills.json` explicitly registers supporting skill dependencies; export does not scan every skill or plugin or infer all dependencies from prose.
+Default skill roots are project `.agents/skills`, project `.codex/skills`, home `skills`, then sibling `.agents/skills` beside the home.
+Repeated `--skill-root PATH` options completely replace the default export-root list.
 
 ```sh
 npx --package ./open-jarvis-0.1.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
@@ -151,39 +203,56 @@ npx --package ./open-jarvis-0.1.0.tgz open-jarvis import --from ./my-assets.jarv
 npx --package ./open-jarvis-0.1.0.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
-有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。
-导入先预览，`--yes` 才写入；相同内容跳过，任何内容差异使整批停止，不覆盖或执行脚本。
-最后一条命令中的路径需替换；先审阅模型偏好，再明确安装激活，导入本身不会改变主控。
-目标机器的登录、插件、外部工具与权限须另行恢复；资产中的绝对路径不会自动重写。
-归档限额：单文件 **4 MiB**、总内容 **32 MiB**、压缩包 **16 MiB**、最多 **5000** 个文件。
-视频等大媒体另行迁移。导出不自动脱敏正文，分享前请审阅；hash 校验是完整性检查，不是来源签名。
-详见[资产执行约定（英文）](payload/skills/jarvis-orchestrator/references/assets.md)。
+For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.
+Import previews first; `--yes` writes. Identical content is skipped; any differing content stops the entire batch without overwriting or running scripts.
+Replace the path in the last command. Review model preferences before explicitly activating them through installation; import alone does not change the controller.
+Restore sign-in, plugins, external tools and permissions separately on the destination. Absolute paths inside assets are not rewritten.
+Archive limits: **4 MiB** per file, **32 MiB** total content, **16 MiB** compressed and **5000** files.
+Move large media such as video separately. Export does not redact file contents; review before sharing. Hashes check integrity, not source authenticity.
+See [asset procedures (English)](payload/skills/jarvis-orchestrator/references/assets.md).
 
-## 常见问题
+</details>
 
-**会改掉我的主控吗？** 已有模型、思考强度和 Fast 偏好会保留；新安装推荐 Astra / High。
-显式使用 `--models` 前先审阅文件。专业岗位与模型档位不会自动替换用户主控。
+<a id="faq"></a>
 
-**怎样确认安装生效？** 先运行 `audit` / `doctor`，再打开新任务并实际派发。
-记录真实代理 ID 和运行时设置；配置文件存在或新会话开始都不保证原生角色注册、热加载或权限生效。
+## FAQ
 
-**没有适合的员工怎么办？** 提出符合领域、语言、交付物和工具需求的临时岗位，获批准后执行。
-模板和岗位名不能代替能力证据；不把无关后端员工改名为语言专家。
+**Will it replace my controller?** Existing model, effort and Fast preferences are preserved; a fresh installation recommends Astra / High.
+Review a file before explicitly applying `--models`. Professions and execution profiles do not automatically replace the user's controller.
 
-**如何更新和回滚？** 先 `audit`，再 `install`；回滚使用该次安装清单的 `--manifest` 路径。
-安装和回滚只管理自身配置，不删除用户员工或资产；后续修改冲突会拒绝回滚。备份可能敏感，请勿公开。
+**How do I verify it is active?** Run `audit` / `doctor`, then open a new task and perform an actual dispatch.
+Record real agent IDs and runtime settings. A configuration file or new session does not guarantee native registration, hot reload or effective permissions.
 
-## 开发、发布与更新
+**What if no employee fits?** Propose a temporary profession matching the domain, language, deliverable and tools, then execute after approval.
+Templates and job titles are not competence evidence. An unrelated backend employee should not be renamed as a language specialist.
 
-功能开发使用分支，通过 PR 合入 `dev`；准备发行时，再创建 `dev` → `main` 的发布 PR。
-合并到 `main` 即批准自动 CI/CD：通过工作流检查后生成版本标签和 GitHub Release 安装包，无需二次发布审批。
-工作流失败时不能把该版本视为已发行；仓库合并记录与 Release 产物应分别核对。
-包由 GitHub Release 托管，但安装依赖仍可能从 registry 获取，不保证完全离线。
-发行规则见[发布流程（英文）](docs/releasing.md)，版本选择、更新与回滚见[升级说明（英文）](docs/upgrading.md)。
+**How do updates and rollback work?** Run `audit`, then `install`; use the installation manifest path with `rollback --manifest`.
+Installation and rollback manage their own configuration without deleting user employees or assets. Later conflicting edits cause rollback to refuse. Backups may be sensitive; keep them private.
 
-## 贡献与当前限制
+<a id="verification"></a>
 
-维护者使用 npm 和 `package-lock.json`，不新增 pnpm 锁文件。相关开发检查为：
+## Verification and current limits
+
+[CI run 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909) passed every Windows/macOS/Linux × Node 22/24 job, both package runners and CI Gate. The final suite contained **91 tests**: Windows **90 passed / 1 POSIX-only skipped**; macOS and Linux **91 passed**.
+
+A **limited review of release code** passed. The older independent review of `assets.mjs` remains incomplete; this is not a full security audit. The linked CI run does not verify a two-real-version upgrade or installation from a public Release. Check the [Release workflow](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml) for publication and public-URL installation results. Static checks do not prove live model capabilities.
+
+These three full READMEs describe the same features. The CLI and detailed reference documents remain mostly untranslated; linked documents are labeled by language. See [validation (English)](docs/validation.md) and [release procedures (English)](docs/releasing.md).
+
+<a id="contributing"></a>
+
+## Contributing and releases
+
+Develop features on branches and merge them into `dev` through PRs. For a release, open a `dev` → `main` release PR.
+Merging into `main` authorizes automatic CI/CD: once workflow checks pass, it creates the version tag and GitHub Release package without a second publication approval.
+A failed workflow may leave a public Release awaiting installation verification. Check the run summary and Release artifacts separately.
+GitHub Releases host the package, but installation dependencies may still come from a registry; fully offline installation is not guaranteed.
+See [release procedures (English)](docs/releasing.md) and [upgrades (English)](docs/upgrading.md) for version selection, updating and rollback.
+
+<details>
+<summary>Contributor checks</summary>
+
+Maintainers use npm and `package-lock.json`; no pnpm lockfile is added. Relevant development checks are:
 
 ```sh
 npm ci --ignore-scripts
@@ -193,7 +262,8 @@ npm run test:package
 pnpm run test:package:pnpm
 ```
 
-Windows 本地 npm/pnpm 安装、迁移和回滚已验证；CI 配置覆盖 Windows、macOS、Linux 的 Node 22/24。
-已配置的矩阵不等于所有平台已通过。独立资产代码复核因网络问题尚未完成，不宣称发布门禁全部通过。
-静态检查不证明实时模型能力。详见[验证记录（英文）](docs/validation.md)与[发布流程（英文）](docs/releasing.md)。
-贡献请阅读 [CONTRIBUTING（英文）](CONTRIBUTING.md)，安全问题见 [SECURITY（英文）](SECURITY.md)；许可为 [MIT](LICENSE)。
+</details>
+
+Read [CONTRIBUTING (English)](CONTRIBUTING.md) and [SECURITY (English)](SECURITY.md). The license is [MIT](LICENSE).
+
+[English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)

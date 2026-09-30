@@ -59,7 +59,7 @@ Prefer existing skills. Without approval for a specific external option, search 
 
 Jarvis requires Node.js 22+ and adds no runtime dependency for this flow. Vercel Skills CLI is an optional external command and may require a higher Node.js version of its own. Use a runtime that satisfies the command's requirement; do not upgrade global Node.js merely to search for or install a skill.
 
-See [portable commands](../README.en.md#reusable-employees-and-portable-assets) / [员工与迁移命令](../README.md#可复用员工与一键导出资产). Starter card JSON frontmatter enables profession and keyword search; the body keeps proposed abilities, verified experience and limitations distinct.
+See the [English guide](../README.md) / [中文指南](../README.zh-CN.md). Starter card JSON frontmatter enables profession and keyword search; the body keeps proposed abilities, verified experience and limitations distinct.
 
 ## 通用模板与沉淀
 

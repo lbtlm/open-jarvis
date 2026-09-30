@@ -23,7 +23,7 @@ const actualFiles = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' })
 const files = pack.files.map(file => file.path).sort();
 assert.deepEqual(actualFiles, files, 'Pack metadata must describe the actual tarball.');
 for (const file of files) {
-  assert.match(file, /^(bin\/|src\/|payload\/|docs\/|README(?:\.(?:en|ja))?\.md$|LICENSE$|CHANGELOG\.md$|CONTRIBUTING\.md$|SECURITY\.md$|package\.json$)/);
+  assert.match(file, /^(bin\/|src\/|payload\/|docs\/|README(?:\.(?:en|zh-CN|ja))?\.md$|LICENSE$|CHANGELOG\.md$|CONTRIBUTING\.md$|SECURITY\.md$|package\.json$)/);
   assert.doesNotMatch(file, /(?:^|\/)(?:\.\.|auth\.json|\.env|node_modules|jarvis-state|\.local|sessions)(?:\/|$)/);
 }
 const sha256 = createHash('sha256').update(readFileSync(tarball)).digest('hex');
