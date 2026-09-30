@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { realpathSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { realpathSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { parse } from 'smol-toml';
-import { install as installApi } from '../src/installer.mjs';
+import { install as installApi, recommend } from '../src/installer.mjs';
 
 const cli = fileURLToPath(new URL('../bin/open-jarvis.mjs', import.meta.url));
 function fixture(t) {
@@ -23,6 +23,49 @@ function json(result) {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
 }
+
+test('explicit legacy receipts preserve CLI and wizard preferences with partial overrides', t => {
+  const root = fixture(t), home = join(root, 'home');
+  const models = {
+    luna: { model: 'gpt-5.6-luna', effort: 'low', fast: true },
+    terra: { model: 'gpt-5.6-terra', effort: 'high', fast: false },
+  };
+  const installed = installApi({ home, models });
+  const saved = join(root, 'saved-receipt');
+  renameSync(dirname(installed.manifest), saved);
+  const manifest = join(saved, 'manifest.json');
+  const before = readFileSync(join(home, 'agents/jarvis_luna.toml'));
+  const options = { home, previousManifests: [manifest] };
+  const prefill = recommend(options).models;
+  for (const role of Object.keys(models)) assert.deepEqual(prefill[role], models[role]);
+  const preview = json(run(home, 'audit', '--previous-manifest', manifest, '--json'));
+  assert.equal(preview.filesChanged, 0);
+  for (const role of Object.keys(models)) assert.deepEqual(preview.models[role], models[role]);
+  assert.equal(json(run(home, 'install', '--yes', '--previous-manifest', manifest, '--json')).status, 'already-installed');
+  assert.deepEqual(readFileSync(join(home, 'agents/jarvis_luna.toml')), before);
+  const overrides = join(root, 'overrides.json');
+  writeFileSync(overrides, JSON.stringify({ luna: { effort: 'medium' } }));
+  const upgrade = json(run(home, 'install', '--yes', '--previous-manifest', manifest, '--models', overrides, '--json'));
+  assert.equal(upgrade.status, 'installed');
+  const choices = recommend({ home }).models;
+  assert.deepEqual(choices.luna, { ...models.luna, effort: 'medium' });
+  assert.deepEqual(choices.terra, models.terra);
+  assert.equal(json(run(home, 'doctor', '--json')).ok, true);
+  assert.equal(json(run(home, 'rollback', '--manifest', upgrade.manifest, '--json')).status, 'rolled-back');
+  assert.deepEqual(readFileSync(join(home, 'agents/jarvis_luna.toml')), before);
+});
+
+test('provider-qualified installed model preferences survive portable CLI activation', t => {
+  const root = fixture(t), source = join(root, 'source'), target = join(root, 'target');
+  const selection = { model: 'example/luna-private', effort: 'low', fast: true };
+  installApi({ home: source, models: { luna: selection } });
+  const bundle = join(root, 'team.gz');
+  assert.equal(json(run(source, 'export', '--out', bundle, '--json')).status, 'exported');
+  assert.equal(json(run(target, 'import', '--from', bundle, '--yes', '--json')).status, 'imported');
+  assert.equal(json(run(target, 'install', '--models', join(target, 'jarvis/models.json'), '--yes', '--json')).status, 'installed');
+  assert.deepEqual(recommend({ home: target }).models.luna, selection);
+  assert.equal(json(run(target, 'doctor', '--json')).ok, true);
+});
 
 test('help, version and invalid arguments never install', t => {
   const home = join(fixture(t), 'absent');

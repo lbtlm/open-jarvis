@@ -1,4 +1,12 @@
-# Validation — 0.1.0 candidate
+# Validation history
+
+## 2026-09-30: release acceptance hardening
+
+A release review found and fixed CLI/wizard prefill ignoring an explicitly supplied prior receipt, which could silently replace custom legacy model/effort choices. Prefill now uses the same validated receipt selection as installation planning. Provider-qualified `provider/model` IDs also survive portable export/import; path traversal, absolute paths, control characters, extra fields and oversized identifiers remain rejected.
+
+Local Linux Node 24.19.0 checks passed: syntax, all 93 tests, distribution allowlist, npm exec and pnpm 10.18.1 dlx on one retained 43-file tarball, and isolated Codex CLI 0.159.0-alpha.7 configuration reads with Fast on/off. An independent read-only code review verified both fixes and found no remaining definite publication blocker within the installer/asset upgrade, rollback and release-gating scope. These checks did not make model requests or verify live dispatch permissions.
+
+Two real local tarballs were exercised through npm exec: `codex-jarvis@0.1.0` from commit `b8a5c8d0a012b59ed39be33016b357cd4ce065f8` and the Open Jarvis candidate based on `5115f1a9e2db643db2094cdad34f4dc9acef902c` plus these preference fixes (before the 0.1.1 version bump). The candidate audit was read-only; installation, doctor and idempotence passed; custom models, efforts, mixed Fast settings, user employee cards and a binary resource survived. Rollback restored all pre-upgrade file bytes and modes, including seven actual backups among twelve changed files; the old packaged CLI's doctor passed afterward. This establishes historical-snapshot migration, **not** two distinct released versions. The first public release and its final-SHA/public-URL checks are recorded by the Release workflow separately.
 
 ## 2026-09-30: GitHub Release pipeline candidate
 
