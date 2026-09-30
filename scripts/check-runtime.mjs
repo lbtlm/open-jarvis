@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { realpathSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -13,7 +13,8 @@ if (!values['codex-bin']) throw new Error('Supply --codex-bin with a Codex execu
 if (values.fast && !['on', 'off'].includes(values.fast)) throw new Error('--fast must be on or off.');
 const executable = resolve(values['codex-bin']);
 const version = execFileSync(executable, ['--version'], { encoding: 'utf8', timeout: 10000 }).trim();
-const scratch = mkdtempSync(join(tmpdir(), 'open-jarvis-runtime-'));
+const tempRoot = realpathSync(tmpdir());
+const scratch = mkdtempSync(join(tempRoot, 'open-jarvis-runtime-'));
 const home = join(scratch, 'codex-home');
 let child;
 let stream;
@@ -83,6 +84,7 @@ try {
     await ended;
     clearTimeout(timeout);
   }
-  assert.ok(relative(resolve(tmpdir()), scratch).startsWith('open-jarvis-runtime-'));
+  const check = relative(tempRoot, realpathSync(scratch));
+  assert.ok(check && !check.startsWith('..') && check.startsWith('open-jarvis-runtime-'));
   rmSync(scratch, { recursive: true, force: true });
 }

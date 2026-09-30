@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { realpathSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { install as installApi } from '../src/installer.mjs';
 
 const cli = fileURLToPath(new URL('../bin/open-jarvis.mjs', import.meta.url));
 function fixture(t) {
-  const path = mkdtempSync(join(tmpdir(), 'open-jarvis-cli-'));
+  const path = mkdtempSync(join(realpathSync(tmpdir()), 'open-jarvis-cli-'));
   t.after(() => rmSync(path, { recursive: true, force: true }));
   return path;
 }
@@ -29,7 +29,7 @@ test('help, version and invalid arguments never install', t => {
   assert.match(run(home).stdout, /Usage: open-jarvis/);
   assert.match(run(home, '--help').stdout, /Open Jarvis/);
   assert.match(run(home, '--help').stdout, /rollback/);
-  assert.equal(run(home, '--version').stdout.trim(), '0.1.0');
+  assert.equal(run(home, '--version').stdout.trim(), JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version);
   assert.equal(run(home, 'install', '--typo').status, 1);
   assert.equal(run(home, 'rollback', '--json').status, 1);
   assert.equal(run(home, 'install', 'extra').status, 1);
@@ -45,6 +45,32 @@ test('public package metadata and executable use Open Jarvis', () => {
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.packages[''].name, pkg.name);
   assert.deepEqual(lock.packages[''].bin, pkg.bin);
+});
+
+test('supplied smoke tarballs reject mismatched metadata before installation', t => {
+  const root = fixture(t);
+  const packageRoot = join(root, 'package');
+  mkdirSync(packageRoot);
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const tarball = join(root, 'fixture.tgz');
+  const smoke = fileURLToPath(new URL('../scripts/smoke-package.mjs', import.meta.url));
+  const invoke = () => spawnSync(process.execPath, [smoke], {
+    env: { ...process.env, OPEN_JARVIS_TARBALL: tarball }, encoding: 'utf8', timeout: 20000,
+  });
+  const pack = () => {
+    const result = spawnSync('tar', ['-czf', tarball, '-C', root, 'package'], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(result.status, 0, result.stderr);
+  };
+  writeFileSync(join(packageRoot, 'package.json'), JSON.stringify({ ...pkg, name: 'wrong-package' }));
+  pack();
+  const wrongName = invoke();
+  assert.equal(wrongName.status, 1);
+  assert.match(wrongName.stderr, /wrong-package/);
+  writeFileSync(join(packageRoot, 'package.json'), JSON.stringify({ ...pkg, version: '999.0.0' }));
+  pack();
+  const wrongVersion = invoke();
+  assert.equal(wrongVersion.status, 1);
+  assert.match(wrongVersion.stderr, /999\.0\.0/);
 });
 
 test('CODEX_HOME install, idempotence and rollback preserve original user settings', t => {

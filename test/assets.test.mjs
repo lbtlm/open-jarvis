@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs, { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import fs, { realpathSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -11,7 +11,7 @@ import { exportAssets, importAssets } from '../src/assets.mjs';
 const roots = new Set();
 test.after(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'jarvis-assets-'));
+  const root = mkdtempSync(join(realpathSync(tmpdir()), 'jarvis-assets-'));
   roots.add(root);
   return { root, home: join(root, 'source'), target: join(root, 'target'), project: join(root, 'project'), targetProject: join(root, 'target-project'), out: join(root, 'assets.jarvis.json.gz') };
 }

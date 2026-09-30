@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { realpathSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { seedEmployees, listEmployees, planTask } from '../src/team.mjs';
 
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'jarvis-team-'));
+  const root = mkdtempSync(join(realpathSync(tmpdir()), 'jarvis-team-'));
   const home = join(root, 'home');
   const project = join(root, 'project');
   mkdirSync(home);
