@@ -1,71 +1,191 @@
-# Codex Jarvis
+[中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
-[中文](README.md) · [MIT](LICENSE)
+# Open Jarvis
 
-Codex Jarvis installs an auditable multi-agent workflow for modern Codex Desktop and CLI installations that support standalone role configuration. Astra / High is the recommendation for a fresh controller; the user's selected controller model, effort, and Fast setting govern the workflow. Luna, Terra, and Sol are logical task lanes whose model and effort are also user-selected recommendations.
+Open Jarvis provides a controller-supervised workflow for specialist collaboration and reusable assets in Codex Desktop and CLI.
+For development, writing, office work, video and other tasks, the controller defines acceptance, selects suitable specialists, supervises execution and accepts the result.
+A specialist's profession is separate from the execution model profile. The user's model, reasoning effort and Fast choices take priority.
 
-This is version `0.1.0`. No npm publication or GitHub location is claimed yet. After publication, the public install command will be:
+This is the **0.1.0 preview**. It has not been published to npm. GitHub repository: [lbtlm/open-jarvis](https://github.com/lbtlm/open-jarvis).
+The three READMEs describe the same features; the CLI and all reference documents are not yet fully localized.
+The project makes no claim of official certification, comparative model pricing, quota benefits or fixed savings.
 
-```sh
-npx codex-jarvis install
-```
+## Install and get started
 
-Requires Node.js 22+ and a signed-in modern Codex client with standalone agent configuration support. The installation target is selected in order: `--home`, `CODEX_HOME`, then `~/.codex`. Desktop and CLI need one installation when they use the same home.
+Requires Node.js **22+** (including npm/npx) and a signed-in Codex client that supports standalone subagent role configuration.
+The installation target is selected in order: `--home`, `CODEX_HOME`, then `~/.codex`.
+Desktop and CLI need only one installation when they share a Codex home.
 
-Before publication, validate a checkout without changing a real global configuration:
-
-```sh
-npm ci
-node bin/codex-jarvis.mjs audit --home /path/to/codex-home
-```
-
-Or pack and validate the local executable through `npx`:
+For the current preview, place a reviewed local package in the terminal's current directory and run:
 
 ```sh
-npm pack
-npx --package ./codex-jarvis-0.1.0.tgz codex-jarvis audit --home /path/to/codex-home
+npx --package ./open-jarvis-0.1.0.tgz open-jarvis install
 ```
 
-## CLI
+The terminal wizard lets you choose models, reasoning effort and Fast for the controller and execution roles, plus an employee starter.
+The starter defaults to `none`: install the collaboration rules first and select specialists as tasks arise.
+`--yes` installs noninteractively and preserves existing preferences; a fresh installation recommends Astra / High.
+Fast is a separate choice and defaults to off. There is no automatic Ultra setting or switch of the user's controller to Sol.
 
-```text
-npx codex-jarvis [install|audit|doctor|rollback]
-  [--home PATH]
-  [--controller-effort EFFORT]
-  [--fast on|off]
-  [--interactive|--yes]
-  [--models FILE]
-  [--previous-manifest PATH ...]
-  [--manifest PATH]
-  [--json]
-```
-
-With no arguments, the executable prints help. `audit` and `doctor` are read-only. `install` creates backups and hashes. `rollback` requires `--manifest`. `install` changes the shared user settings in the selected `CODEX_HOME`; use a synthetic home for development and acceptance, while `audit` performs no writes. The installer upgrades only its own v2 state and does not migrate legacy Codex configuration syntax such as `agents.max_threads` or role tables. To take over state left by the Python v1 Jarvis installer, supply every prior state manifest with a repeated `--previous-manifest`, ordered oldest to newest. Run `audit` against an explicit `--home` first. `doctor` performs static installed-file checks only; it does not probe a running Codex instance, model access, or actual role dispatch.
-
-In a terminal, `install` prompts for each role's model, reasoning effort, and Fast choice. `--interactive` forces prompts for piped scripted tests; `--yes` skips them and applies current, explicit JSON, or recommended values. Installation without a TTY and without `--yes` is refused. A preview and final confirmation appear before writes; cancellation writes nothing. Re-running reads existing v2 settings for change instead of resetting them blindly.
-
-`--models` takes a JSON file with optional `controller`, `luna`, `terra`, `sol`, and `reviewer` entries, each shaped as `{ "model": "…", "effort": "…", "fast": false }`. `--fast on|off` is controller-only shorthand; choose Fast for other roles individually in the wizard or JSON. Before dispatch, the orchestration skill reads the installed role TOML model, effort, and Fast settings; compatibility explicit binding uses those effective values instead of replacing them with a logical lane's fixed fallback.
-
-## Workflow and compatibility
-
-Copy the [model mapping example](docs/models.example.json) and keep the roles you want to override, then pass `--models ./my-models.json` to `audit` and `install`. Subsequent installations preserve custom mappings from the active v2 manifest. Existing controller effort is preserved unless explicitly overridden. Model availability and supported efforts remain account/runtime-specific, including Spark.
-
-Luna/Medium, Terra/Medium, Sol/High, and reviewer Sol/High are recommendations, not forced mappings. Fast defaults to off to conserve credits. When supported, Fast uses `service_tier = "fast"` and `features.fast_mode = true`; off sets `service_tier = "default"` without disabling the runtime feature switch. Fast consumes more credits, and its availability remains account/runtime-specific. The independent reviewer requires an effective read-only sandbox. If a native role is unavailable, compatibility explicit binding may use a supported generic worker after loading the role TOML instructions and explicitly setting its model, effort, and Fast settings. Reports must distinguish requested settings from settings verified by the runtime.
-
-Compatibility binding cannot recreate missing security controls. Independently verify the reviewer's effective read-only sandbox even when its native role appears loaded, because live parent settings can override it. Role visibility and model availability can differ between Desktop and CLI runtimes; restart or reopen Codex and verify a real dispatch.
-
-See [routing](docs/routing.md), [compatibility](docs/compatibility.md), and [release guidance](docs/releasing.md). Dedicated employees and skills keep their own permission and side-effect boundaries; do not use a general worker to bypass them.
-
-To perform a runtime compatibility check without a model request, run:
+After publication to npm, this shorter command will be available:
 
 ```sh
-npm run test:runtime -- --codex-bin /path/to/codex
+npx open-jarvis install
 ```
 
-The script installs into a temporary Codex home, then reads its runtime configuration without sending a model request. `--codex-bin` must name the actual executable, not a `.cmd` wrapper.
+The examples below use the post-publication command to show the arguments. With the current local package, replace `npx open-jarvis`
+with `npx --package ./open-jarvis-0.1.0.tgz open-jarvis` and keep the remaining arguments.
+You do not need to clone the source, install Jarvis globally or run a Node script manually.
 
-## References
+After installation, open a new Codex task and try a request such as:
 
-- [Codex subagents configuration](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Codex config reference](https://learn.chatgpt.com/docs/config-file/config-reference)
-- [npm npx documentation](https://docs.npmjs.com/cli/v11/commands/npx)
+> Complete this task using Jarvis. Have the controller define acceptance, select specialists by capability, supervise execution and accept the result; record actual agent IDs and evidence of runtime settings.
+
+A new session helps load configuration but does not guarantee native roles are effective; verify an actual dispatch.
+Use `audit` to preview changes before installing and `doctor` for static checks afterward.
+
+## Optional pnpm entrypoint
+
+npx is the default entrypoint. If you already use pnpm, you can run the same package and wizard:
+
+```sh
+pnpm --package=./open-jarvis-0.1.0.tgz dlx open-jarvis install
+```
+
+After publication to npm, use:
+
+```sh
+pnpm dlx open-jarvis install
+```
+
+For other examples, replace `npx open-jarvis` with `pnpm dlx open-jarvis`;
+for the current local package, use the `--package` prefix above and keep the command and arguments.
+Both runners share the same Codex home, employees and assets. You do not need two installations or a second asset store.
+pnpm **10.18.1** has been tested locally on Windows. See [compatibility (English)](docs/compatibility.md).
+
+## Common commands
+
+| Command | Purpose | Example (after publication) |
+| --- | --- | --- |
+| `audit` | Preview installation changes without writing | `npx open-jarvis audit` |
+| `install` | Install or upgrade with protected backups | `npx open-jarvis install --starter none` |
+| `doctor` | Statically inspect installed files | `npx open-jarvis doctor` |
+| `rollback` | Restore one installation using its manifest | `npx open-jarvis rollback --manifest /path/to/manifest.json` |
+| `employees` | Search employee cards or preview starter initialization | `npx open-jarvis employees --query writing` |
+| `plan` | Preview an employee, skills and execution profile | `npx open-jarvis plan --employee nova-writer --difficulty standard` |
+| `export` | Write a new asset archive | `npx open-jarvis export --out ./my-assets.jarvis.json.gz` |
+| `import` | Preview an archive before applying it | `npx open-jarvis import --from ./my-assets.jarvis.json.gz` |
+
+`/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
+`--home PATH` selects the Codex home; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
+Use `npx open-jarvis --help` for all options, applying the local-package prefix when needed.
+`audit` and `doctor` make no live model requests and do not prove an employee has run.
+
+## Controller, specialists and models
+
+The controller handles ordinary questions, single-step lookups and tiny, directly verifiable edits.
+For other work, it first checks the required domain, deliverable, language, methods and tools, then prefers reuse among approved specialists whose capabilities match.
+Approval, availability and a fixed model do not establish professional competence.
+If no specialist matches, the controller proposes a temporary employee with responsibilities, skills and settings, then dispatches after user approval.
+It does not force an unrelated employee into the task or rename one to imply expertise.
+
+| Execution profile | Recommended model / effort | Suitable work |
+| --- | --- | --- |
+| `controller` | GPT-6 Astra / High | Coordination, supervision and final acceptance |
+| `luna` | GPT-6 Luna / Medium | Clear, small tasks with low risk |
+| `simple` | GPT-6.1 Sol / Low | Simple implementations with known mechanisms |
+| `terra` | GPT-6.1 Sol / Medium | Routine tasks and scoped investigation of unknown failures |
+| `sol` | GPT-6.1 Sol / High | Contract changes, complex semantics or critical behavior |
+| `reviewer` | GPT-6.1 Sol / High | Independent review triggered by risk or evidence |
+
+These are recommendations; existing user choices take priority. `terra` is a compatibility key, not a GPT-6 Terra product.
+Fast is selected separately from model and effort. Model access, permissions and service settings require runtime verification.
+The default is one executor. At most three subagents run concurrently, including Reviewer and excluding the controller, subject to lower user or global limits.
+Executors do not delegate recursively. Independent review is triggered by specified risks or evidence, rather than required for every task.
+If necessary model, Fast or Reviewer read-only settings cannot be preserved, report that dispatch as blocked.
+
+## Employees and skills
+
+| Starter | Candidate employees |
+| --- | --- |
+| `none` | No employee cards added |
+| `development` | Iris (frontend), Atlas (backend), Quinn (QA), Sentry (review) |
+| `writing` | Nova (writing) |
+| `office` | Clara (office work) |
+| `video` | Frame (video) |
+
+Starters provide candidate cards; they do not mean employees are hired, skills are loaded or experience is verified.
+The older `employees --init --yes` command remains compatible and defaults to adding missing development cards.
+For example, preview writing candidates before explicitly writing them:
+
+```sh
+npx open-jarvis employees --init --starter writing
+npx open-jarvis employees --init --starter writing --yes
+npx open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+```
+
+`my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
+`plan` does not dispatch employees, read skill bodies or prove that skills have loaded.
+Follow explicitly requested skills first, then look for suitable installed skills; search externally only when something is still missing.
+A card's suggestions are not a whitelist. `--skill` can temporarily bind a skill outside the card without permanently editing it.
+Installing Jarvis does not install a whole skill catalog or provide Office, editing, plugin or cloud-account capabilities.
+An employee card is a file asset, not a resident process. See [employee conventions (English)](payload/skills/jarvis-orchestrator/references/employees.md).
+
+## Asset evolution and migration
+
+Reusable results follow a small loop: propose a candidate → validate → let the user decide → save or update → reuse later.
+Employee experience, skills, knowledge, preferences and templates can be retained; experience requires evidence and applicable conditions.
+Approval for a task or temporary hire is not approval for permanent retention. This does not train models or automatically rewrite long-term instructions.
+Scores, retrospectives and statistics are not compulsory after every task. See [asset evolution (Chinese)](docs/asset-evolution.md).
+
+Personal assets live under `jarvis/` in the Codex home; project assets live under `.jarvis/`.
+Export includes employees, knowledge, preferences, resources, selected skill directories and model preferences.
+`jarvis/skills.json` explicitly registers supporting skill dependencies; export does not scan every skill or plugin or infer all dependencies from prose.
+Default skill roots are project `.agents/skills`, project `.codex/skills`, home `skills`, then sibling `.agents/skills` beside the home.
+Repeated `--skill-root PATH` options completely replace the default export-root list.
+
+```sh
+npx open-jarvis export --out ./my-assets.jarvis.json.gz
+npx open-jarvis import --from ./my-assets.jarvis.json.gz
+npx open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+```
+
+For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.
+Import previews first; `--yes` writes. Identical content is skipped; any differing content stops the entire batch without overwriting or running scripts.
+Replace the path in the last command. Review model preferences before explicitly activating them through installation; import alone does not change the controller.
+Restore sign-in, plugins, external tools and permissions separately on the destination. Absolute paths inside assets are not rewritten.
+Archive limits: **4 MiB** per file, **32 MiB** total content, **16 MiB** compressed and **5000** files.
+Move large media such as video separately. Export does not redact file contents; review before sharing. Hashes check integrity, not source authenticity.
+See [asset procedures (English)](payload/skills/jarvis-orchestrator/references/assets.md).
+
+## FAQ
+
+**Will it replace my controller?** Existing model, effort and Fast preferences are preserved; a fresh installation recommends Astra / High.
+Review a file before explicitly applying `--models`. Professions and execution profiles do not automatically replace the user's controller.
+
+**How do I verify it is active?** Run `audit` / `doctor`, then open a new task and perform an actual dispatch.
+Record real agent IDs and runtime settings. A configuration file or new session does not guarantee native registration, hot reload or effective permissions.
+
+**What if no employee fits?** Propose a temporary profession matching the domain, language, deliverable and tools, then execute after approval.
+Templates and job titles are not competence evidence. An unrelated backend employee should not be renamed as a language specialist.
+
+**How do updates and rollback work?** Run `audit`, then `install`; use the installation manifest path with `rollback --manifest`.
+Installation and rollback manage their own configuration without deleting user employees or assets. Later conflicting edits cause rollback to refuse. Backups may be sensitive; keep them private.
+
+## Contributing and current limits
+
+Maintainers use npm and `package-lock.json`; no pnpm lockfile is added. Relevant development checks are:
+
+```sh
+npm ci --ignore-scripts
+npm run check
+npm test
+npm run test:package
+pnpm run test:package:pnpm
+```
+
+Local Windows checks have verified npm/pnpm installation, migration and rollback. CI is configured for Windows, macOS and Linux on Node 22/24.
+A configured matrix is not a passing result on every platform. Independent asset-code review remains incomplete due to network issues; full release-gate completion is not claimed.
+Static checks do not prove live model capabilities. See [validation (English)](docs/validation.md) and [release procedure (English)](docs/releasing.md).
+Read [CONTRIBUTING (English)](CONTRIBUTING.md) and [SECURITY (English)](SECURITY.md). The license is [MIT](LICENSE).

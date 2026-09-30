@@ -13,7 +13,7 @@ if (!values['codex-bin']) throw new Error('Supply --codex-bin with a Codex execu
 if (values.fast && !['on', 'off'].includes(values.fast)) throw new Error('--fast must be on or off.');
 const executable = resolve(values['codex-bin']);
 const version = execFileSync(executable, ['--version'], { encoding: 'utf8', timeout: 10000 }).trim();
-const scratch = mkdtempSync(join(tmpdir(), 'codex-jarvis-runtime-'));
+const scratch = mkdtempSync(join(tmpdir(), 'open-jarvis-runtime-'));
 const home = join(scratch, 'codex-home');
 let child;
 let stream;
@@ -57,13 +57,13 @@ try {
       });
     });
   }
-  await rpc('initialize', { clientInfo: { name: 'codex-jarvis-check', version: '0.1.0' } });
+  await rpc('initialize', { clientInfo: { name: 'open-jarvis-check', version: '0.1.0' } });
   child.stdin.write('{"method":"initialized"}\n');
   const { config } = await rpc('config/read', { includeLayers: false, cwd: scratch });
   assert.equal(config.model, 'gpt-6-astra');
   assert.equal(config.model_reasoning_effort, 'high');
   assert.equal(config.agents.enabled, true);
-  assert.equal(config.agents.default_subagent_model, 'gpt-5.6-terra');
+  assert.equal(config.agents.default_subagent_model, 'gpt-6.1-sol');
   assert.equal(config.agents.default_subagent_reasoning_effort, 'medium');
   assert.equal(config.agents.max_concurrent_threads_per_session, 3);
   if (values.fast) assert.equal(config.service_tier, values.fast === 'on' ? 'fast' : 'default');
@@ -83,6 +83,6 @@ try {
     await ended;
     clearTimeout(timeout);
   }
-  assert.ok(relative(resolve(tmpdir()), scratch).startsWith('codex-jarvis-runtime-'));
+  assert.ok(relative(resolve(tmpdir()), scratch).startsWith('open-jarvis-runtime-'));
   rmSync(scratch, { recursive: true, force: true });
 }

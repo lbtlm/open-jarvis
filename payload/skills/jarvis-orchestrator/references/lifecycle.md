@@ -1,53 +1,42 @@
 # Delegation lifecycle reference
 
-Use this reference when work requires a ledger, handoff, recovery, or a detailed task contract. The controller owns the ledger; agents report through results and do not concurrently edit it.
+Use for multiple agents, long/resumable work, handoff, detailed review evidence, or closeout. The controller owns task state; workers report results, not concurrent ledger edits. A Light assignment needs only goal, owned paths, and acceptance, with the parent recording agent ID and mapping. No separate ledger file or acknowledgement-only turn is required.
 
-## Contract
-
-```text
-Task ID: <id>
-Parent: <parent id>
-Objective and expected behavior: <specific result>
-Model and routing reason: <Luna | Terra | Sol and matching rule>
-Attempt / revision: <execution generation / contract version>
-Owner and allowed paths: <single writer and exact files or directories>
-Dependencies and preserved boundaries: <interfaces, invariants, skills>
-Acceptance: <checks and pass criteria>
-Checkpoint and escalation: <next event/time, scope/risk/authority triggers>
-```
-
-## Ledger fields
+## Detailed contract and state
 
 ```text
-task_id | parent | objective | acceptance
-owner / agent_id | model / effort | allowed paths | dependencies
-attempt | revision | status | next checkpoint
-change snapshot | delivery paths | verification evidence | unresolved items
-latest progress | controller decision | handoff reason
+task_id / parent / lane and reason:
+objective / scope / acceptance:
+owner and allowed paths / dependencies / invariants:
+actual role / requested model, effort, Fast / runtime verification:
+attempt / revision / next checkpoint and soft budget:
+current snapshot / evidence locations / unresolved decisions:
 ```
 
-Use a commit ID when available. For uncommitted work, record a snapshot that includes tracked and untracked changes. Increment `revision` when objective, scope, or acceptance changes; increment `attempt` when execution restarts or ownership changes. Results whose identifiers do not match the active version are stale evidence.
-
-## States and authority
+Start attempt/revision at 1 when versioned tracking is needed. Increase revision for changed scope/acceptance; increase attempt only after stopping the old writer before restart/reassignment. A late result with mismatched identifiers cannot authorize another action. For uncommitted work, identify both tracked and untracked changes; a commit ID alone does not describe a dirty worktree.
 
 `READY -> RUNNING -> SUBMITTED -> REVIEW -> DONE`
 
-`RUNNING -> BLOCKED` for missing information or an unavailable environment. The controller may resolve the blocker and return it to `RUNNING`.
+REVIEW means controller acceptance, not mandatory independent Reviewer work. Use the precise triggers in [SKILL.md](../SKILL.md#verify-and-converge). Missing requirements, unavailable environment, or unconfirmed old-writer shutdown can produce BLOCKED; elapsed time alone cannot. A cancelled task uses CANCELLED, not DONE.
 
-`RUNNING -> HANDOFF_PENDING -> READY` only after the former writer and its relevant commands or tools are confirmed stopped. A cancelled task uses `CANCELLED`, never `DONE`.
+`RUNNING -> HANDOFF_PENDING -> READY` requires verified shutdown of the former writer and related tools before ownership changes. Preserve and inspect partial work. On resume, verify state before continuing. Do not replay external actions of unknown outcome.
 
-An executor submission, completed agent turn, or successful command does not grant `DONE`. The controller determines the final state after reviewing the current snapshot and combined result.
+## Checkpoints and repair
 
-## Evidence return
+Light / Standard / Complex reassessment defaults are 10 / 20 / 30 minutes; scoped Terra exploration has a checkpoint around 10 minutes. Override these in the assignment when a known operation warrants it. They are decision points, not timers implemented by Codex, deadlines, or reasons to omit validation. Inspect state and ask once at a missed checkpoint, then record the evidence-based choice and next checkpoint. A continuation with no new evidence needs a changed investigation, narrower task, safe handoff, or concrete blocker.
 
-Each agent response should include:
+Batch review findings. After one repair batch and targeted recheck, further review requires a stated material blocker, new critical evidence, or changed affected scope. Keep genuine blockers open. A worker's submission or successful command does not mark the parent DONE.
+
+## Evidence and minimal closeout
 
 ```text
-task_id / attempt / revision:
-scope understood and files or symbols examined/changed:
-checks actually run, command, exit code, and relevant output:
-evidence paths or snapshot:
-unresolved issues, environmental blockers, or controller decisions needed:
+assignment (task_id / attempt / revision when in use):
+changes and key paths/symbols:
+checks actually run / exit codes / relevant result:
+snapshot and evidence paths / reuse applicability:
+blockers / required controller decisions / optional findings:
 ```
 
-For a review finding, add the condition that exposes it and the exact location. For unrun checks, say they were not run and why.
+Keep raw logs outside the parent conversation when useful; include the relevant failure excerpt and evidence path. Reuse checks only when relevant source, dependencies, inputs, configuration, and environment remain applicable. Reviewer blockers identify the violated requirement/invariant, exact location, exposure condition, and evidence or specific missing critical check. Optional style and unrelated existing issues do not automatically block this task.
+
+Close with relevant evidence and remaining blockers. Do not require scores, KPIs, mandatory timing/rework statistics or a retrospective after every task. At a task boundary, a short handoff can preserve accepted results, remaining work, key paths, and reusable evidence without copying the full conversation.

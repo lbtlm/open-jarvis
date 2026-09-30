@@ -1,5 +1,6 @@
 node_modules/
 *.tgz
+*.jarvis.json.gz
 .local/
 .env
 .env.*

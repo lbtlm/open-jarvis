@@ -22,3 +22,5 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run test:package
+      - run: npm install --global pnpm@10.18.1 --ignore-scripts
+      - run: pnpm run test:package:pnpm

@@ -19,30 +19,31 @@ import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { parse as parseToml } from 'smol-toml';
 
+import { roleKeys, effortNames, supportedEfforts, defaultModels } from './profiles.mjs';
+export { supportedEfforts, defaultModels } from './profiles.mjs';
+
 const PAYLOAD = fileURLToPath(new URL('../payload/', import.meta.url));
 const START = '<!-- JARVIS_START -->';
 const END = '<!-- JARVIS_END -->';
+// Persistent receipt identity: keep recognizing installations made before the Open Jarvis rename.
 const PACKAGE = 'codex-jarvis';
 const MANIFEST_VERSION = 2;
-const ROLE_KEYS = ['luna', 'terra', 'sol', 'reviewer'];
+const ROLE_KEYS = roleKeys;
 const ROLE_NAMES = ROLE_KEYS.map(key => `jarvis_${key}`);
-const EFFORTS = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
+const EFFORTS = new Set(effortNames);
 const MANAGED_PATHS = new Set([
   'config.toml',
   'AGENTS.md',
   ...ROLE_KEYS.map(key => `agents/jarvis_${key}.toml`),
   'skills/jarvis-orchestrator/SKILL.md',
   'skills/jarvis-orchestrator/references/lifecycle.md',
+  'skills/jarvis-orchestrator/references/employees.md',
+  'skills/jarvis-orchestrator/references/employee-card.md',
+  'skills/jarvis-orchestrator/references/assets.md',
+  'skills/jarvis-orchestrator/references/domains.md',
 ]);
 const installLocks = new Set();
 
-export const defaultModels = Object.freeze({
-  controller: Object.freeze({ model: 'gpt-6-astra', effort: 'high' }),
-  luna: Object.freeze({ model: 'gpt-5.6-luna', effort: 'medium' }),
-  terra: Object.freeze({ model: 'gpt-5.6-terra', effort: 'medium' }),
-  sol: Object.freeze({ model: 'gpt-5.6-sol', effort: 'high' }),
-  reviewer: Object.freeze({ model: 'gpt-5.6-sol', effort: 'high' }),
-});
 
 function fail(message) {
   throw new Error(message);
@@ -193,6 +194,11 @@ function resolveModels(overrides = undefined, controllerEffort = undefined, base
     if (!EFFORTS.has(controllerEffort)) fail(`Unknown reasoning effort: ${controllerEffort}`);
     result.controller.effort = controllerEffort;
   }
+  for (const [key, choice] of Object.entries(result)) {
+    if (!supportedEfforts(choice.model).includes(choice.effort)) {
+      fail(`Model mapping ${key}: ${choice.model} does not support Codex effort ${choice.effort}.`);
+    }
+  }
   return result;
 }
 
@@ -216,6 +222,10 @@ function patchConfig(original, models, controllerEffortExplicit) {
   if (agents && ROLE_NAMES.some(name => Object.hasOwn(agents, name))) {
     fail('Existing config.toml Jarvis role declaration needs manual merge; no files changed.');
   }
+  const concurrency = agents?.max_concurrent_threads_per_session;
+  if (concurrency !== undefined && (!Number.isSafeInteger(concurrency) || concurrency < 1)) {
+    fail('Existing agents.max_concurrent_threads_per_session must be a positive integer; no files changed.');
+  }
   const controllerFastExplicit = Object.hasOwn(models.controller, 'fast');
   if (controllerFastExplicit && models.controller.fast && parsed.features !== undefined
       && (!parsed.features || typeof parsed.features !== 'object' || Array.isArray(parsed.features))) {
@@ -230,6 +240,9 @@ function patchConfig(original, models, controllerEffortExplicit) {
   const selectedEffort = controllerEffortExplicit
     ? models.controller.effort
     : (typeof parsed.model_reasoning_effort === 'string' ? parsed.model_reasoning_effort : models.controller.effort);
+  if (!supportedEfforts(models.controller.model).includes(selectedEffort)) {
+    fail(`Selected controller model ${models.controller.model} does not support Codex effort ${selectedEffort}; choose a supported effort explicitly.`);
+  }
   const targets = {
     '': {
       model: models.controller.model,
@@ -240,7 +253,7 @@ function patchConfig(original, models, controllerEffortExplicit) {
       enabled: true,
       default_subagent_model: models.terra.model,
       default_subagent_reasoning_effort: models.terra.effort,
-      max_concurrent_threads_per_session: 3,
+      ...(concurrency === undefined ? { max_concurrent_threads_per_session: 3 } : {}),
     },
     ...(controllerFastExplicit && models.controller.fast ? { features: { fast_mode: true } } : {}),
   };
@@ -315,13 +328,13 @@ function renderRole(source, key, models) {
   if (data.name !== `jarvis_${key}` || !data.description || !data.developer_instructions) {
     fail(`Incomplete or incorrect payload role: jarvis_${key}`);
   }
-  let text = decode(source)
+  let text = decode(source).replaceAll('\r\n', '\n')
     .replace(/(?:\r?\n)?^\s*service_tier\s*=.*(?:\r?\n|$)/m, '\n')
     .replace(/(?:\r?\n)?^\s*\[features\]\s*(?:#.*)?\r?\n\s*fast_mode\s*=\s*(?:true|false)\s*(?:#.*)?(?:\r?\n|$)/m, '\n');
   const replace = (field, value) => {
     const pattern = new RegExp(`^\\s*${field}\\s*=.*$`, 'm');
-    if (!pattern.test(text)) fail(`Payload role jarvis_${key} is missing ${field}.`);
-    text = text.replace(pattern, `${field} = ${JSON.stringify(value)}`);
+    if (pattern.test(text)) text = text.replace(pattern, `${field} = ${JSON.stringify(value)}`);
+    else text = `${field} = ${JSON.stringify(value)}\n${text}`;
   };
   replace('model', models[key].model);
   replace('model_reasoning_effort', models[key].effort);
@@ -534,7 +547,8 @@ export function audit(options = {}) {
     ownershipManifests: prepared.priorManifests,
     models: selected,
     serviceTier: generatedConfig.service_tier ?? null,
-    maxSubagents: 3,
+    maxSubagents: Math.min(3, generatedConfig.agents.max_concurrent_threads_per_session),
+    codexMaxSubagents: generatedConfig.agents.max_concurrent_threads_per_session,
   };
 }
 
@@ -727,7 +741,6 @@ export function doctor(options = {}) {
   const home = normalizeHome(options?.home);
   const manifestInfo = newestOwnedManifest(home);
   const expectedModels = resolveModels(undefined, undefined, manifestInfo?.manifest?.settings?.models ?? defaultModels);
-  const ownedHashes = new Map((manifestInfo?.manifest?.ownedFiles ?? []).map(record => [record.path, record.sha256]));
   const checks = [];
   const configPath = targetPath(home, 'config.toml');
   if (!existsSync(configPath)) {
@@ -738,11 +751,12 @@ export function doctor(options = {}) {
       const config = parseConfig(readFileSync(configPath), 'config.toml');
       const agents = config.agents ?? {};
       const configOk = config.model === expectedModels.controller.model
-        && EFFORTS.has(config.model_reasoning_effort)
+        && supportedEfforts(config.model).includes(config.model_reasoning_effort)
         && agents.enabled === true
         && agents.default_subagent_model === expectedModels.terra.model
         && agents.default_subagent_reasoning_effort === expectedModels.terra.effort
-        && agents.max_concurrent_threads_per_session === 3
+        && Number.isSafeInteger(agents.max_concurrent_threads_per_session)
+        && agents.max_concurrent_threads_per_session >= 1
         && !Object.hasOwn(agents, 'max_threads')
         && !ROLE_NAMES.some(name => Object.hasOwn(agents, name))
         && (!Object.hasOwn(expectedModels.controller, 'fast')
@@ -762,6 +776,7 @@ export function doctor(options = {}) {
       try {
         assertNoLinks(home, rolePath);
         const raw = readFileSync(rolePath);
+        const expected = renderRole(readFileSync(join(PAYLOAD, relativePath)), key, expectedModels);
         const role = parseConfig(raw, relativePath);
         ok = role.name === `jarvis_${key}` && role.model === expectedModels[key].model
           && role.model_reasoning_effort === expectedModels[key].effort
@@ -771,30 +786,52 @@ export function doctor(options = {}) {
             || (role.service_tier === (expectedModels[key].fast ? 'fast' : 'default')
               && (!expectedModels[key].fast || role.features?.fast_mode === true)));
         if (key === 'reviewer') ok = ok && role.sandbox_mode === 'read-only';
-        if (ownedHashes.has(relativePath)) ok = ok && hash(raw) === ownedHashes.get(relativePath);
+        ok = ok && raw.equals(expected);
       } catch {
         ok = false;
       }
     }
-    checks.push(checkResult(`role:${key}`, ok, ok ? 'Role file matches the installed mapping.' : 'Role file is missing or mismatched.', relativePath));
+    checks.push(checkResult(`role:${key}`, ok,
+      ok ? 'Role file matches the current package payload and installed mapping.' : 'Role file is missing or differs from the current package payload or installed mapping.',
+      relativePath));
   }
   if (existsSync(agentsPath)) {
     try { assertNoLinks(home, agentsPath); } catch (error) { checks.push(checkResult('agents-path', false, error.message, 'agents')); }
   }
   const instructionsPath = targetPath(home, 'AGENTS.md');
-  const instructions = existsSync(instructionsPath) ? decode(readFileSync(instructionsPath)) : '';
-  const markersOk = instructions.split(START).length - 1 === 1 && instructions.split(END).length - 1 === 1
-    && instructions.indexOf(START) < instructions.indexOf(END);
-  checks.push(checkResult('instructions', markersOk, markersOk ? 'Jarvis instruction markers are present.' : 'Jarvis instruction block is missing or malformed.', 'AGENTS.md'));
-  for (const relativePath of ['skills/jarvis-orchestrator/SKILL.md', 'skills/jarvis-orchestrator/references/lifecycle.md']) {
+  let instructionsOk = false;
+  if (existsSync(instructionsPath)) {
+    try {
+      assertNoLinks(home, instructionsPath);
+      const raw = readFileSync(instructionsPath);
+      const instructions = decode(raw);
+      const markersOk = instructions.split(START).length - 1 === 1 && instructions.split(END).length - 1 === 1
+        && instructions.indexOf(START) < instructions.indexOf(END);
+      instructionsOk = markersOk && raw.equals(patchInstructions(raw));
+    } catch {
+      instructionsOk = false;
+    }
+  }
+  checks.push(checkResult('instructions', instructionsOk,
+    instructionsOk ? 'Jarvis instruction block matches the current package payload.' : 'Jarvis instruction block is missing, malformed or differs from the current package payload.',
+    'AGENTS.md'));
+  for (const [name, relativePath] of [
+    ['main', 'skills/jarvis-orchestrator/SKILL.md'],
+    ['lifecycle', 'skills/jarvis-orchestrator/references/lifecycle.md'],
+    ['employees', 'skills/jarvis-orchestrator/references/employees.md'],
+    ['employee-card', 'skills/jarvis-orchestrator/references/employee-card.md'],
+    ['assets', 'skills/jarvis-orchestrator/references/assets.md'],
+    ['domains', 'skills/jarvis-orchestrator/references/domains.md'],
+  ]) {
     const skillPath = targetPath(home, relativePath);
     let skillOk = false;
     if (existsSync(skillPath) && !lstatSync(skillPath).isSymbolicLink()) {
       const raw = readFileSync(skillPath);
-      skillOk = raw.length > 0 && (!ownedHashes.has(relativePath) || hash(raw) === ownedHashes.get(relativePath));
+      const expected = readFileSync(join(PAYLOAD, ...relativePath.split('/')));
+      skillOk = raw.equals(expected);
     }
-    checks.push(checkResult(`skill:${relativePath.endsWith('SKILL.md') ? 'main' : 'lifecycle'}`, skillOk,
-      skillOk ? 'Orchestration skill file matches the installed payload.' : 'Orchestration skill file is missing, empty or modified.', relativePath));
+    checks.push(checkResult(`skill:${name}`, skillOk,
+      skillOk ? 'Orchestration skill file matches the current package payload.' : 'Orchestration skill file is missing or differs from the current package payload.', relativePath));
   }
   const ok = checks.every(check => check.ok);
   return {
@@ -802,6 +839,7 @@ export function doctor(options = {}) {
     ok,
     target: home,
     checks,
+    staticValidation: ok ? 'healthy' : (manifestInfo ? 'drift-detected' : 'not-installed'),
     runtimeVerification: 'not-performed',
     runtimeNote: 'This check does not prove that native Jarvis roles are callable in the current runtime.',
   };

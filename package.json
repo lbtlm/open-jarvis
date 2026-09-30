@@ -1,18 +1,22 @@
 {
-  "name": "codex-jarvis",
+  "name": "open-jarvis",
   "version": "0.1.0",
   "description": "Install supervised multi-model Jarvis workflows for Codex desktop and CLI.",
   "type": "module",
-  "bin": { "codex-jarvis": "bin/codex-jarvis.mjs" },
+  "bin": { "open-jarvis": "bin/open-jarvis.mjs" },
   "engines": { "node": ">=22" },
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/lbtlm/open-jarvis.git" },
+  "homepage": "https://github.com/lbtlm/open-jarvis#readme",
+  "bugs": { "url": "https://github.com/lbtlm/open-jarvis/issues" },
   "keywords": ["codex", "jarvis", "agents", "orchestration", "cli"],
-  "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
+  "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "README.ja.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
   "scripts": {
     "test": "node --test",
     "test:package": "node scripts/smoke-package.mjs",
+    "test:package:pnpm": "node scripts/smoke-package.mjs --pnpm",
     "test:runtime": "node scripts/check-runtime.mjs",
-    "check": "node --check bin/codex-jarvis.mjs && node --check src/installer.mjs && node --check src/wizard.mjs",
+    "check": "node --check bin/open-jarvis.mjs && node --check src/installer.mjs && node --check src/wizard.mjs && node --check src/profiles.mjs && node --check src/team.mjs && node --check src/assets.mjs",
     "prepack": "npm run check && npm test"
   },
   "dependencies": { "smol-toml": "1.8.0" }
