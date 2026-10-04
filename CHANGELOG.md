@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Keep approved employee names visible through dispatch, progress, handoff and acceptance; distinguish task labels, runtime IDs and execution profiles without changing runtime settings or client labels.
+
 ## 0.1.1
 
 - Preserve custom model, effort and Fast selections from explicitly supplied prior installation receipts through CLI and wizard upgrades.
