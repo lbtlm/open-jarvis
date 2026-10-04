@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.3
 
 - Add scoped engineering discipline for code tasks: complete behavior with minimum necessary complexity, justified reuse or additions, change-created cleanup and behavior evidence; assess concrete design burden without line-count gates or routine extra reviewers.
 
