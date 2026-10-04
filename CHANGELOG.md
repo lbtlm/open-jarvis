@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep approved employee names visible through dispatch, progress, handoff and acceptance; distinguish task labels, runtime IDs and execution profiles without changing runtime settings or client labels.
+
 ## 0.1.0
 
 - Add a Node.js installer and `open-jarvis` executable for modern Codex desktop and CLI, distributed as a GitHub Release tarball without automatic postinstall configuration changes.
