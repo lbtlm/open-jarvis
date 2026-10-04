@@ -23,10 +23,10 @@ Open Jarvis 为 **Codex Desktop 和 CLI** 提供主控监督的协作流程。�
 
 需要 **Node.js 22+**（含 npm/npx）及已登录、支持独立子代理角色配置的 Codex。Desktop 和 CLI 共用 Codex home 时只需安装一次。
 
-从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.1.2** 为例，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
+从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.1.3** 为例，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis install
 ```
 
 **在终端向导中选择配置：** 主控和执行角色的模型、思考强度、Fast，以及员工模板。模板默认为 `none`，可先安装协作规则，再按需添加员工。已有偏好优先；全新安装的主控推荐 Astra / High。Fast 单独选择，默认关闭，不会自动开启 Ultra 或切换到 Sol。
@@ -35,14 +35,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 <summary>pnpm 等价入口与经过审阅的本地安装包</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis install
 ```
 
 将审阅过的安装包放在当前目录后，任选一个入口：
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.2.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis install
 ```
 
 两种入口共用 Codex home、员工和资产。包通过 GitHub Releases 分发，**未发布到 npm registry**；依赖仍可能从 npm 获取，不保证完全离线。安装目标依次取 `--home`、`CODEX_HOME`、`~/.codex`。`--yes` 非交互安装并保留已有偏好。pnpm **10.18.1** 已在 Windows 本地验证，详见[兼容性说明（英文）](docs/compatibility.md)。
@@ -130,9 +130,9 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 例如，预览写作候选卡后再明确写入：
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
@@ -151,10 +151,10 @@ npx --package ./open-jarvis-0.1.2.tgz open-jarvis plan --employee nova-writer --
 下表是**命令后缀**，不能单独作为 shell 命令运行。请把其中一项接在完整入口后：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis
 ```
 
-所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.1.2.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.1.2.tgz dlx open-jarvis`，后缀保持不变。
+所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.1.3.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis`，后缀保持不变。
 
 | 命令后缀 | 用途 |
 | --- | --- |
@@ -170,12 +170,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 例如，执行静态检查：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` 是占位路径，请换成实际安装清单。
 `--home PATH` 选择 Codex home；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx --package ./open-jarvis-0.1.2.tgz open-jarvis --help` 查看。
+完整参数可通过 `npx --package ./open-jarvis-0.1.3.tgz open-jarvis --help` 查看。
 `audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
 
 <a id="assets"></a>
@@ -197,10 +197,10 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。
