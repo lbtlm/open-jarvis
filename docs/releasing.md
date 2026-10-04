@@ -20,7 +20,7 @@ On `dev`, update `package.json`, the top-level and root-package versions in `pac
 `release.yml` runs only on main pushes and calls the same CI for that final SHA. The privileged job downloads that run's tested artifact; it does not install dependencies or repack it. It creates `vX.Y.Z` at the exact SHA, creates a draft Release, uploads and downloads the tarball, checksum and manifest to verify their bytes, then makes the stable Release public. Notes contain this concrete version's install command:
 
 ```sh
-npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis install
+npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis install
 ```
 
 Replace both version occurrences for another Release. The package/executable name stays `open-jarvis`, but it is delivered through GitHub. `smol-toml` and package-manager tooling may still be downloaded from npm; this is not a fully offline distribution. GitHub-generated source archives are not the installer tarball.

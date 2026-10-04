@@ -23,10 +23,10 @@ Open Jarvis は **Codex Desktop と CLI** に統括エージェントが監督�
 
 **Node.js 22+**（npm/npx を含む）と、独立したサブエージェントのロール設定に対応するログイン済みの Codex が必要です。Desktop と CLI が同じ Codex home を使う場合、インストールは 1 回で十分です。
 
-[GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) から公開済みのバージョンを選んでください。以下は **0.1.2** の例です。別のバージョンでは、番号、URL、ファイル名を合わせて変更します。該当する成果物が利用できない場合は、下記の確認済みローカルパッケージを使ってください。
+[GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) から公開済みのバージョンを選んでください。以下は **0.1.3** の例です。別のバージョンでは、番号、URL、ファイル名を合わせて変更します。該当する成果物が利用できない場合は、下記の確認済みローカルパッケージを使ってください。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis install
 ```
 
 **ターミナルのウィザードで設定を選びます：** 統括と実行ロールのモデル、推論の強度、Fast、スタッフのテンプレート。既定のテンプレートは `none` なので、協働ルールから始めて必要なスタッフを追加できます。既存の設定を優先し、新規導入の統括には Astra / High を推奨します。Fast は別に選び、既定ではオフです。Ultra の自動有効化や Sol への自動切り替えは行いません。
@@ -35,14 +35,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 <summary>pnpm の代替手順と確認済みローカルパッケージ</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis install
 ```
 
 確認済みのパッケージを現在のディレクトリに置き、どちらかの実行方法を使います。
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.2.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis install
 ```
 
 両方とも同じ Codex home、スタッフ、資産を使います。パッケージは GitHub Releases で配布し、**npm registry には公開していません**。依存関係は npm から取得する場合があり、完全なオフライン導入は保証しません。導入先は `--home`、`CODEX_HOME`、`~/.codex` の順で決まります。`--yes` は対話なしで導入し、既存の設定を維持します。pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性（英語）](docs/compatibility.md)を参照してください。
@@ -130,9 +130,9 @@ Fast はモデルや推論の強度とは別に選びます。モデルの利用
 例えば、執筆の候補カードを確認してから明示的に書き込みます。
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` は例示用のスキル ID です。実在するスキルに置き換えてください。不足している場合、計画は実行不可として報告されます。
@@ -151,10 +151,10 @@ Jarvis の導入は全スキルの一括導入ではなく、Office、編集、�
 以下は**コマンドの末尾部分**で、単独では実行できません。次の完全な実行プレフィックスに追加してください。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis
 ```
 
-どの末尾部分も、`pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz dlx open-jarvis` に追加できます。確認済みローカルパッケージでは、`npx --package ./open-jarvis-0.1.2.tgz open-jarvis` または `pnpm --package=./open-jarvis-0.1.2.tgz dlx open-jarvis` を使い、末尾部分はそのままにします。
+どの末尾部分も、`pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis` に追加できます。確認済みローカルパッケージでは、`npx --package ./open-jarvis-0.1.3.tgz open-jarvis` または `pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis` を使い、末尾部分はそのままにします。
 
 | コマンドの末尾部分 | 用途 |
 | --- | --- |
@@ -170,12 +170,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 例えば、静的な検査は次のように実行します。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open-jarvis-0.1.2.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` は例示用のパスです。実際のインストールマニフェストに置き換えてください。
 `--home PATH` は Codex home、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
-全オプションは `npx --package ./open-jarvis-0.1.2.tgz open-jarvis --help` で確認できます。
+全オプションは `npx --package ./open-jarvis-0.1.3.tgz open-jarvis --help` で確認できます。
 `audit` と `doctor` はモデルへのリクエストを行わず、スタッフが実行されたことも証明しません。
 
 <a id="assets"></a>
@@ -197,10 +197,10 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.2/open
 `--skill-root PATH` を複数指定すると、既定のエクスポート探索先の一覧を完全に置き換えます。
 
 ```sh
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.2.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.3.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 プロジェクト資産は、移行元のエクスポートと移行先のインポートの両方で `--project` を明示し、それぞれのプロジェクトパスを指定します。
