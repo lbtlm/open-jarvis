@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2
 
 - Keep approved employee names visible through dispatch, progress, handoff and acceptance; distinguish task labels, runtime IDs and execution profiles without changing runtime settings or client labels.
 
