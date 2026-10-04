@@ -2,13 +2,16 @@
 
 Use for multiple agents, long/resumable work, handoff, detailed review evidence, or closeout. The controller owns task state; workers report results, not concurrent ledger edits. A Light assignment needs only goal, owned paths, and acceptance, with the parent recording agent ID and mapping. No separate ledger file or acknowledgement-only turn is required.
 
+Use the [employee naming rules](employees.md#employee-names-and-runtime-identity) throughout dispatch, progress, handoff, submission and controller acceptance.
+
 ## Detailed contract and state
 
 ```text
 task_id / parent / lane and reason:
 objective / scope / acceptance:
+approved employee name / readable task label / supported task_name / returned runtime ID:
 owner and allowed paths / dependencies / invariants:
-actual role / requested model, effort, Fast / runtime verification:
+internal execution profile / actual tool role / requested model, effort, Fast / runtime verification:
 attempt / revision / next checkpoint and soft budget:
 current snapshot / evidence locations / unresolved decisions:
 ```
@@ -23,14 +26,14 @@ REVIEW means controller acceptance, not mandatory independent Reviewer work. Use
 
 ## Checkpoints and repair
 
-Light / Standard / Complex reassessment defaults are 10 / 20 / 30 minutes; scoped Terra exploration has a checkpoint around 10 minutes. Override these in the assignment when a known operation warrants it. They are decision points, not timers implemented by Codex, deadlines, or reasons to omit validation. Inspect state and ask once at a missed checkpoint, then record the evidence-based choice and next checkpoint. A continuation with no new evidence needs a changed investigation, narrower task, safe handoff, or concrete blocker.
+Light / Standard / Complex reassessment defaults are 10 / 20 / 30 minutes; scoped Standard exploration has a checkpoint around 10 minutes. Override these in the assignment when a known operation warrants it. They are decision points, not timers implemented by Codex, deadlines, or reasons to omit validation. Inspect state and ask once at a missed checkpoint, then record the evidence-based choice and next checkpoint. A continuation with no new evidence needs a changed investigation, narrower task, safe handoff, or concrete blocker.
 
 Batch review findings. After one repair batch and targeted recheck, further review requires a stated material blocker, new critical evidence, or changed affected scope. Keep genuine blockers open. A worker's submission or successful command does not mark the parent DONE.
 
 ## Evidence and minimal closeout
 
 ```text
-assignment (task_id / attempt / revision when in use):
+employee name / task label / runtime ID / assignment (task_id / attempt / revision when in use):
 changes and key paths/symbols:
 checks actually run / exit codes / relevant result:
 snapshot and evidence paths / reuse applicability:
