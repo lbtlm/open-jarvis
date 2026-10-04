@@ -4,6 +4,12 @@
 
 - Keep approved employee names visible through dispatch, progress, handoff and acceptance; distinguish task labels, runtime IDs and execution profiles without changing runtime settings or client labels.
 
+## 0.1.1
+
+- Preserve custom model, effort and Fast selections from explicitly supplied prior installation receipts through CLI and wizard upgrades.
+- Allow provider-qualified model IDs in portable export/import while retaining validation against traversal, absolute paths and control characters.
+- Add preference-preservation, partial override, rollback and portable activation regressions; document external-receipt recovery limits.
+
 ## 0.1.0
 
 - Add a Node.js installer and `open-jarvis` executable for modern Codex desktop and CLI, distributed as a GitHub Release tarball without automatic postinstall configuration changes.
