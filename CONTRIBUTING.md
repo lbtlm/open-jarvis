@@ -2,6 +2,8 @@
 
 Please keep changes small, reviewable, and tied to a stated behavior. Do not include personal Codex homes, credentials, backups, session logs, or production configuration in an issue, test fixture, or pull request.
 
+For code changes, follow the authoritative [engineering discipline](payload/skills/jarvis-orchestrator/SKILL.md#engineering-discipline-for-code-tasks): deliver complete behavior with minimum necessary complexity, reuse suitable implementations, and keep optimization scoped and behavior-verified. Acceptance considers concrete maintenance burden, not line counts or style preferences.
+
 For changes to role routing or compatibility, preserve these contracts:
 
 - The user-selected main controller is the logical controller and final quality gate. Astra / High is the recommendation for a fresh setup; Fast is optional and defaults off.

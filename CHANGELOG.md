@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add scoped engineering discipline for code tasks: complete behavior with minimum necessary complexity, justified reuse or additions, change-created cleanup and behavior evidence; assess concrete design burden without line-count gates or routine extra reviewers.
+
 ## 0.1.2
 
 - Keep approved employee names visible through dispatch, progress, handoff and acceptance; distinguish task labels, runtime IDs and execution profiles without changing runtime settings or client labels.
