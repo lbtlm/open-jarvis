@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
+import { checkAncestors } from './asset-paths.mjs';
 
 // Stable archive format, shared with assets exported before the Open Jarvis rename.
 const FORMAT = 'codex-jarvis-assets';
@@ -35,20 +36,6 @@ function skillId(value) {
 function omitted(part) {
   const lower = part.toLowerCase();
   return OMIT.has(lower) || lower === '.env' || lower.startsWith('.env.') || lower === 'history.jsonl' || lower === 'session.jsonl';
-}
-
-// Check every existing ancestor: a regular-looking leaf can sit inside a junction.
-function checkAncestors(path) {
-  const chain = [];
-  for (let current = resolve(path); ; current = dirname(current)) {
-    chain.push(current);
-    if (dirname(current) === current) break;
-  }
-  for (const current of chain.reverse()) {
-    let info;
-    try { info = lstatSync(current); } catch (error) { if (error.code === 'ENOENT' || error.code === 'ENOTDIR') continue; throw error; }
-    if (info.isSymbolicLink()) fail(`Symbolic link or junction blocks asset operation: ${current}`);
-  }
 }
 
 function parseJson(data, label) {

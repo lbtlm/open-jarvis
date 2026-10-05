@@ -1,11 +1,12 @@
 import { createInterface } from 'node:readline';
 import { supportedEfforts, profiles, recommendedModels } from './profiles.mjs';
 import { starters, starterEmployees } from './starters.mjs';
+import { previewQmd, QMD_PACKAGE } from './qmd.mjs';
 
 const roles = Object.entries(profiles).map(([key, p]) => [key, p.label, p.model, p.effort]);
 const modelOptions = recommendedModels;
 
-export async function collectChoices({ initial, initialStarter = 'none', ask, write }) {
+export async function collectChoices({ initial, initialStarter = 'none', initialQmd, home, ask, write }) {
   starterEmployees(initialStarter);
   write('Jarvis 安装向导 / Setup\n模型与档位仅为推荐；可输入其他模型 ID。可用性由账户及 Codex 决定。\nFast 独立于思考强度，可能增加额度消耗；首次安装推荐关闭。\n');
   const models = {};
@@ -50,23 +51,54 @@ export async function collectChoices({ initial, initialStarter = 'none', ask, wr
     if (Object.hasOwn(starters, candidate)) starter = candidate;
     else write('请选择列出的模板。 / Choose a listed starter.\n');
   }
+  let qmd;
+  while (qmd === undefined) {
+    const answer = (await ask('可选安装 QMD 引擎 / Install optional QMD engine? [y/N]: ')).trim().toLowerCase();
+    if (!answer || ['n', 'no', '否'].includes(answer)) qmd = null;
+    else if (['y', 'yes', '是'].includes(answer)) {
+      let manager;
+      while (!manager) {
+        const value = (await ask(`包管理器 / Package manager (npm, pnpm) [${initialQmd?.manager ?? 'npm'}]: `)).trim().toLowerCase() || initialQmd?.manager || 'npm';
+        if (['npm', 'pnpm'].includes(value)) manager = value;
+        else write('请输入 npm 或 pnpm。 / Enter npm or pnpm.\n');
+      }
+      let device;
+      while (!device) {
+        const value = (await ask(`设备 / Device (auto recommended, cpu) [${initialQmd?.device ?? 'auto'}]: `)).trim().toLowerCase() || initialQmd?.device || 'auto';
+        if (['auto', 'cpu'].includes(value)) device = value;
+        else write('请输入 auto 或 cpu。 / Enter auto or cpu.\n');
+      }
+      let dir;
+      while (!dir) {
+        const value = (await ask(`QMD 独立绝对目录 / Absolute QMD directory${initialQmd?.dir ? ` [${initialQmd.dir}]` : ''}: `)).trim() || initialQmd?.dir;
+        try { dir = previewQmd({ dir: value, manager, device, home }).dir; }
+        catch (error) { write(`${error.message}\n`); }
+      }
+      try { qmd = previewQmd({ dir, manager, device, home }); }
+      catch (error) { write(`${error.message}\n`); }
+    } else write('请输入 y 或 n。 / Enter y or n.\n');
+  }
   write('\n安装预览 / Installation summary\n');
   write(`初始员工模板 / Starter: ${starter}\n`);
   for (const [key, label] of roles) {
     const value = models[key];
     write(`${label}: ${value.model} / ${value.effort} / Fast ${value.fast ? 'ON' : 'OFF'}\n`);
   }
+  if (qmd) {
+    write(`QMD: ${QMD_PACKAGE} / ${qmd.manager} / ${qmd.device}\n程序、包缓存、QMD 缓存和配置 / Engine, package cache, QMD cache and config: ${qmd.dir}\n`);
+    write('将下载平台原生依赖，安装和原生构建可能耗时；缺少系统依赖时需另行处理。 / Downloads platform native dependencies; installation/native builds may take time and require separately installed system dependencies.\n不自动下载模型、建立资产索引或安装系统驱动、完整 CUDA Toolkit。 / No automatic models, asset indexing, system drivers or full CUDA Toolkit.\n');
+  } else write('QMD: 不安装；保留已有环境和连接。 / Not selected; existing QMD environments and connections are preserved.\n');
   const confirmed = ['y', 'yes', '是'].includes((await ask('\n确认写入所选 Codex 配置？ / Apply these choices? [y/N]: ')).trim().toLowerCase());
-  return { models, starter, confirmed };
+  return { models, starter, qmd, confirmed };
 }
 
-export async function runWizard(initial, { input = process.stdin, output = process.stdout, initialStarter = 'none' } = {}) {
+export async function runWizard(initial, { input = process.stdin, output = process.stdout, initialStarter = 'none', initialQmd, home } = {}) {
   const reader = createInterface({ input, output, terminal: Boolean(input.isTTY && output.isTTY), crlfDelay: Infinity });
   const lines = reader[Symbol.asyncIterator]();
   const cancelled = new Error('Setup cancelled. No configuration was changed.');
   cancelled.code = 'JARVIS_CANCELLED';
   try {
-    return await collectChoices({ initial, initialStarter,
+    return await collectChoices({ initial, initialStarter, initialQmd, home,
       write: value => output.write(value),
       ask: async question => {
         output.write(question);

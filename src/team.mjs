@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
 import { difficultyRoles, supportedEfforts } from './profiles.mjs';
 import { starterEmployees } from './starters.mjs';
+import { resolveExperience } from './experience.mjs';
 
 const safeId = value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(value);
 export function seedEmployees({ home, apply = false, starter = 'development' }) {
@@ -88,7 +89,7 @@ export function listEmployees({ home, project, query = '' }) {
     `${card.id} ${card.name} ${card.profession} ${JSON.stringify(card.keywords)}`.toLowerCase().includes(term)));
 }
 
-export function planTask({ home, project, employee, difficulty, risk = 'normal', skills = [] }) {
+export function planTask({ home, project, employee, difficulty, risk = 'normal', skills = [], experiences = [] }) {
   if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: light, simple, standard or complex. Direct work does not need a dispatch plan.');
   if (!['normal', 'critical'].includes(risk)) throw new Error('Choose risk: normal or critical.');
   const card = listEmployees({ home, project }).find(c => c.id === employee);
@@ -103,9 +104,14 @@ export function planTask({ home, project, employee, difficulty, risk = 'normal',
   const selectedSkills = skills.map(id => ({ id, path: findSkill(id, skillRoots(home, project)),
     source: card.skills.some(skill => skill.id === id) ? 'employee-card' : 'task-override', loaded: false }));
   const blockers = selectedSkills.filter(s => !s.path).map(s => `Missing skill: ${s.id}`);
+  const selectedExperience = [];
+  for (const ref of experiences) {
+    try { selectedExperience.push(resolveExperience({ home, project }, ref)); }
+    catch (error) { blockers.push(error.message); }
+  }
   return { status: blockers.length ? 'blocked' : 'proposed', employee: card, difficulty, risk,
     role: role.name, rolePath, requested: { model: role.model, effort: role.model_reasoning_effort, speed: role.service_tier ?? 'inherit' },
-    selectedSkills, availableSkills: card.skills, independentReviewRequired: !card.reviewer && risk === 'critical',
+    selectedSkills, selectedExperience, availableSkills: card.skills, independentReviewRequired: !card.reviewer && risk === 'critical',
     blockers, approvalRequired: 'Use actual user approval for this scope; a saved card is not authorization.',
     dispatched: false, runtimeVerified: false,
     next: 'Controller adds owned scope and acceptance, reads selected skills and dispatches only within actual approval. Never use a proposed plan as proof of dispatch.' };

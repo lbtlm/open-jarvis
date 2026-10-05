@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add opt-in host-local QMD discovery instructions for employees, skills and experience, with bounded collection scope, embedding-only semantic lookup, source revalidation and a direct-file fallback. QMD remains an external optional dependency.
+- Add optional QMD engine setup to the installation wizard and `install --qmd`, with explicit directory, npm/pnpm and backend choices; leave ordinary installation and existing QMD connections unchanged. Reuse QMD's native automatic GPU selection and CPU fallback, and distinguish missing embedding assets from unavailable CUDA system libraries.
+- Add a user-controlled Markdown experience lifecycle with candidate previews, explicit approval, conflict-checked updates and scoped local search; reuse existing asset export/import without a new service or dependency.
+- Include current experience references in task-plan previews and Markdown assignments, keeping employee capability matching, source verification and actual dispatch under the controller.
+
 ## 0.1.3
 
 - Add scoped engineering discipline for code tasks: complete behavior with minimum necessary complexity, justified reuse or additions, change-created cleanup and behavior evidence; assess concrete design burden without line-count gates or routine extra reviewers.

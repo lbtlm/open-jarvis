@@ -187,6 +187,16 @@ Employee experience, skills, knowledge, preferences and templates can be retaine
 Approval for a task or temporary hire is not approval for permanent retention. This does not train models or automatically rewrite long-term instructions.
 Scores, retrospectives and statistics are not compulsory after every task. See [asset evolution (Chinese)](docs/asset-evolution.md).
 
+**In development, unreleased:** the Markdown experience workflow keeps task-local candidates separate from approved `knowledge/experience/` records, previews the exact content before saving, and selects current source references for plans. It supports personal and project scope with basic Unicode lookup. Optional, separately installed QMD enables scoped employee, skill and experience discovery, with embedding-only semantic retrieval and a direct-file fallback. Employee cards link to canonical experience rather than copying its text. See [Markdown experience (English)](docs/experience.md) for the workflow and reviewed local-package examples. The published 0.1.3 package and CI results below do not establish support or verification for this feature.
+
+**Optional QMD installation (unreleased):** default `install` does not download QMD and preserves existing QMD environments and connections. The interactive wizard offers QMD installation with npm or pnpm, an installation directory and `auto` or `cpu` device selection; it invokes the package manager only after final confirmation. For noninteractive installation, use a reviewed local feature tarball:
+
+```sh
+npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+```
+
+Replace the package and absolute directory paths; `--qmd-manager pnpm` is also supported. This installs the engine and platform native packages. It does not download models, build indexes, install drivers or install the full CUDA Toolkit. Semantic retrieval needs models and an index of approved assets. GPU detection and CPU fallback follow QMD; installed packages do not prove CUDA works, and Windows may need an optional cuBLAS runtime. A QMD failure is reported as partial installation while Jarvis may remain installed. See [QMD details (English)](docs/experience.md).
+
 <details>
 <summary>Migration commands, paths and limits</summary>
 

@@ -11,6 +11,7 @@ task_id / parent / lane and reason:
 objective / scope / acceptance:
 approved employee name / readable task label / supported task_name / returned runtime ID:
 owner and allowed paths / dependencies / invariants:
+selected experience when relevant: scoped ID / relative Markdown path / heading / content hash / applicability:
 internal execution profile / actual tool role / requested model, effort, Fast / runtime verification:
 attempt / revision / next checkpoint and soft budget:
 current snapshot / evidence locations / unresolved decisions:

@@ -14,6 +14,8 @@ For example, a backend employee may check CLI behavior as supporting evidence fo
 
 Look for applicable cards in the current project's `.jarvis/employees/*.md`, then personal `$CODEX_HOME/jarvis/employees/*.md` (default `~/.codex/jarvis/employees`). Do not create these directories until a card is approved for retention. Prefer project-specific cards; disclose conflicting cards with the same name instead of silently combining permissions. Search card names, profession and keywords first; read only likely matches. There is no fixed cap on candidate recommendations. Recommend the relevant choices with reasons; let the user browse more if useful.
 
+Use configured [QMD retrieval](assets.md#optional-qmd-retrieval) for this discovery and relevant installed skill entrypoints; fall back to ordinary file lookup when unavailable. Search rank is a candidate signal, not proof of professional fit, approval or a loaded skill. User-specified skills still take priority.
+
 Existing dedicated employees, project rules, and their skills take precedence over generic templates. Reuse an approved employee only within its agreed scope and settings. Reuse a running/idle instance only for the same profession, project/worktree, related task context and compatible skills/permissions. Unrelated work gets a fresh bounded instance. The reviewer must remain independent of the author. Preserve the main skill's concurrency and safe-handoff rules.
 
 ## Employee names and runtime identity
@@ -51,7 +53,7 @@ After dispatch, append the real ID and settings verification status; retain the 
 
 The employee submits scoped results, relevant checks and evidence; the main controller owns final acceptance. At closeout, ask once only when a new reusable profession or procedure emerged: choose the useful asset type or save nothing; use [assets.md](assets.md) for employee experience, skills, knowledge, preferences and resources. Hiring approval and persistence approval are separate. Show the exact proposed card/skill and destination before asking; no silence or time limit counts as consent. Already-saved unchanged material needs no repeated retention question.
 
-The CLI's `employees` search finds card metadata; `plan` resolves requested profiles and selected skill paths. Neither command judges professional suitability. The controller must establish capability fit before treating their output as a dispatch proposal.
+The CLI's `employees` search finds card metadata; `plan` resolves requested profiles, selected skill paths and explicitly selected experience references. Neither command judges professional suitability or proves those sources were loaded. The controller must establish capability fit and check experience applicability before treating their output as a dispatch proposal. Keep reusable experience in the [shared Markdown workflow](assets.md#markdown-experience-at-dispatch) and link from employee cards rather than copying the same method into every card.
 
 After approval, save a portable Markdown card under `.jarvis/employees/<id>.md` for project scope, or `$CODEX_HOME/jarvis/employees/<id>.md` for explicitly approved personal scope. `<id>` is a plain filename slug. Keep private account details, credentials, task logs and machine-specific paths out of reusable cards. Check existing names and responsibilities before adding; prefer updating/merging the same profession with user agreement. There is no artificial headcount quota or automatic deletion. Expired or duplicate cards can be offered for consolidation when they interfere with selection.
 

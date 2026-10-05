@@ -174,13 +174,13 @@ test('install and employees init select starters and rollback retains user-owned
 test('interactive starter prefill applies only after final confirmation', t => {
   const home = join(fixture(t), 'accepted');
   const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'video', '--home', home], {
-    input: '\n'.repeat(19) + 'yes\n', encoding: 'utf8', timeout: 20000,
+    input: '\n'.repeat(20) + 'yes\n', encoding: 'utf8', timeout: 20000,
   });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(readdirSync(join(home, 'jarvis', 'employees')), ['frame-video.md']);
   const cancelled = join(fixture(t), 'cancelled');
   const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'writing', '--home', cancelled], {
-    input: '\n'.repeat(20), encoding: 'utf8', timeout: 20000,
+    input: '\n'.repeat(21), encoding: 'utf8', timeout: 20000,
   });
   assert.equal(cancel.status, 0, cancel.stderr);
   assert.equal(existsSync(cancelled), false);
@@ -334,7 +334,7 @@ test('wizard choices reach controller and role TOML; cancellation and EOF do not
     '', '', 'n',
     '', '', 'y',
     '', '', 'n',
-    '', 'y',
+    '', '', 'y',
   ].join('\n') + '\n';
   const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', home], {
     input: answers, encoding: 'utf8', timeout: 20000,
@@ -352,7 +352,7 @@ test('wizard choices reach controller and role TOML; cancellation and EOF do not
   assert.equal(sol.features.fast_mode, true);
   const cancelled = join(root, 'cancelled');
   const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', cancelled], {
-    input: '\n'.repeat(20), encoding: 'utf8', timeout: 20000,
+    input: '\n'.repeat(21), encoding: 'utf8', timeout: 20000,
   });
   assert.equal(cancel.status, 0, cancel.stderr);
   assert.equal(existsSync(cancelled), false);
