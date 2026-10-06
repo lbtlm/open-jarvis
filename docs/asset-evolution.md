@@ -31,7 +31,7 @@ flowchart LR
 
 员工检索先看名字、专业和关键词，只读命中卡；技能先遵循用户明确指定，再找已安装的匹配能力，缺少才按需搜索。卡内技能只是常用建议，临时绑定新技能不会永久修改员工卡。长期沉淀时优先更新同类资产，避免重复堆积。失效内容需提出修正或归档建议，由用户决定。
 
-## Markdown 经验（开发中，尚未发布）
+## Markdown 经验
 
 候选保存在任务输出目录，位于受管理的资产导出根目录之外；元数据写着 `draft` 不能保证排除导出。先展示具体候选、证据、目标范围与内容 hash，经明确批准后才保存到个人 `CODEX_HOME/jarvis/knowledge/experience/` 或项目 `.jarvis/knowledge/experience/`。模板只提供结构，不验证事实；贡献者只记录实际完成的工作，不追认他人的验收或发布结果。
 
@@ -39,34 +39,34 @@ flowchart LR
 
 派发前重新读取适用且有效的记录，在任务合同中带上 ID、范围、相对路径、标题和当前内容 hash，并说明适用理由。CLI `plan` 只产生计划，不启动员工或证明技能已加载；编排技能指导主控检索与真实派发，不是运行时强制机制。经验正文按参考证据处理，不作为更高优先级指令。
 
-获准经验复用现有导出/导入，不增加第二种归档、云同步或自动学习服务。修正与停用也需按获准范围处理，旧版由 Git 或库外备份保留。详细参数、更新冲突和本地 feature 包示例见 [Markdown experience（英文）](experience.md)。已发布 0.1.3 包尚不含此开发功能，下方原有安装与迁移示例仍针对 0.1.3。
+获准经验复用现有导出/导入，不增加第二种归档、云同步或自动学习服务。修正与停用也需按获准范围处理，旧版由 Git 或库外备份保留。详细参数、更新冲突和 0.1.5 示例见 [Markdown experience（英文）](experience.md)。0.1.5 发布后可使用这些安装与迁移示例。
 
 ## 安装与复用
 
-首次安装可以不选模板，也可选开发、写作、办公或视频。模板是候选卡，不是已经雇佣的员工，也不会安装第三方技能。从 GitHub Release 下载所选版本的安装包后，通过 npx 使用；下面以当前目录中的 `open-jarvis-0.1.3.tgz` 为例：
+首次安装可以不选模板，也可选开发、写作、办公或视频。模板是候选卡，不是已经雇佣的员工，也不会安装第三方技能。从 GitHub Release 下载所选版本的安装包后，通过 npx 使用；下面以当前目录中的 `open-jarvis-0.1.5.tgz` 为例：
 
 ```sh
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis install --starter none
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --query 小说
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --starter none
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --query 小说
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 首次 Release 发布前使用已验收的本地安装包。发布后也可将 `--package` 的值换成该版本的 GitHub Release 下载 URL，参数不变，无需手动运行 Node 脚本。详见[安装入口](compatibility.md)。
 
-也支持 pnpm：将示例中的 npx 命令前缀换成 `pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis`。员工查询、计划、导出、导入及激活的参数和保存位置完全相同，无需建立另一套资产库。
+也支持 pnpm：将示例中的 npx 命令前缀换成 `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis`。员工查询、计划、导出、导入及激活的参数和保存位置完全相同，无需建立另一套资产库。
 
 最后一条要求技能实际存在，否则预览会报告阻塞；`plan` 不启动员工、不证明技能已加载。写作、办公、视频的实际工具由当前环境提供，安装 Jarvis 不意味着拥有剪辑、渲染、Office 或云账号能力。
 
 ## 一次导出、另一台电脑恢复
 
 ```sh
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
 # 有项目资产时，导出和导入均显式添加 --project 项目绝对路径
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
 # 审阅迁移的模型偏好后再显式激活
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 包含员工、知识、偏好、资源、选中技能及可迁移模型偏好。技能由员工卡、`jarvis/skills.json` 和已安装编排技能确定；支持技能依赖需显式登记，不自动解析技能正文的全部依赖。插件、账号、外部工具和素材引用目标需要另行恢复，绝对路径不自动重写。导入默认只预览；同内容跳过，有差异整批停止，不覆盖、不执行脚本。

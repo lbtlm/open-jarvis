@@ -4,12 +4,12 @@ Choose a published version on [GitHub Releases](https://github.com/lbtlm/open-ja
 
 ## Preview and install
 
-Replace `0.1.3` below with the desired published version in both URL positions. Run the new version's read-only audit first against your existing Codex home:
+Replace `0.1.5` below with the desired published version in both URL positions. Run the new version's read-only audit first against your existing Codex home:
 
 ```sh
-npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis audit
-npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis install
-npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis doctor
+npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis audit
+npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install
+npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
 ```
 
 The install command previews/protects managed changes and creates an installation manifest with backups when it writes. Save the exact manifest path returned by this upgrade. An unchanged install can return `already-installed` without a new manifest. Use `--home ABSOLUTE_PATH` consistently when targeting a different home, and first rehearse upgrades in a copied, disposable fixture rather than your active home.
@@ -23,7 +23,7 @@ For a manually downloaded installer, download `SHA256SUMS` and `release-manifest
 Use the manifest produced by the upgrade to restore the pre-upgrade managed files:
 
 ```sh
-npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis rollback --manifest ABSOLUTE_UPGRADE_MANIFEST_PATH
+npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis rollback --manifest ABSOLUTE_UPGRADE_MANIFEST_PATH
 ```
 
 Use the same target `--home` if one was specified during the upgrade. Rollback checks current file hashes before restoring; files edited after installation cause refusal and require manual preservation/merge. Rollback does not remove user-owned employee cards or resources. If the prior receipt was supplied from outside `jarvis-state`, keep that receipt and pass `--previous-manifest` again for subsequent audit/install commands. `doctor` discovers only receipts under `jarvis-state`, so after this kind of rollback it may report restored custom roles as mismatched; this does not mean the restored files were overwritten. Restart/reopen Codex after installation or rollback and separately verify actual roles/settings at runtime. Installing an older tarball is not a substitute for rollback with the correct manifest.

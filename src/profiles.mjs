@@ -18,4 +18,4 @@ export function supportedEfforts(model) {
   // Preserve explicit legacy/provider selections; verify availability at dispatch.
   return [...effortNames];
 }
-export const difficultyRoles = Object.freeze({ light: 'luna', simple: 'simple', standard: 'terra', complex: 'sol' });
+export const difficultyRoles = Object.freeze({ micro: 'luna', light: 'luna', simple: 'simple', standard: 'terra', complex: 'sol' });
