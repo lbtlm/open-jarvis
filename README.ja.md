@@ -187,6 +187,16 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open
 タスクや臨時採用の承認は、恒久保存の承認ではありません。モデル学習や長期指示の自動書き換えも行いません。
 毎回の採点、振り返り、統計は必須ではありません。[資産の改善手順（中国語）](docs/asset-evolution.md)を参照してください。
 
+**開発中・未公開：** Markdown の経験記録では、タスク内の候補と承認済みの `knowledge/experience/` を分け、保存前に具体的な内容を確認し、計画には現在の原文への参照を選びます。個人・プロジェクトの範囲と基本的な Unicode 検索に対応します。別途導入した任意の QMD と連携し、対象範囲を限定してスタッフ・スキル・経験を検索できます。必要に応じて埋め込みモデルによる意味検索を使い、利用できない場合はローカルファイル検索に戻ります。スタッフカードは本文を複製せず、正本の経験記録にリンクします。手順と確認済みローカルパッケージの例は [Markdown の経験記録（英語）](docs/experience.md)を参照してください。公開済み 0.1.3 パッケージと下記の CI 結果は、この機能への対応や検証を示すものではありません。
+
+**任意の QMD 導入（未公開）：** 既定の `install` は QMD をダウンロードせず、既存の QMD 環境と接続を維持します。対話ウィザードでは QMD の導入を選び、npm または pnpm、導入先、`auto` または `cpu` を指定できます。最終確認の後にパッケージマネージャーを実行します。非対話での導入には、確認済みのローカル feature パッケージを使います。
+
+```sh
+npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+```
+
+実際のパッケージと絶対パスの導入先に置き換えてください。`--qmd-manager pnpm` も使えます。導入するのはエンジンとプラットフォーム用の native パッケージです。モデルのダウンロード、索引の作成、ドライバーや完全な CUDA Toolkit の導入は行いません。意味検索にはモデルと承認済み資産の索引が必要です。GPU 検出と CPU へのフォールバックは QMD に従います。パッケージが存在しても CUDA の動作確認にはならず、Windows では任意の cuBLAS ランタイムが必要な場合があります。QMD の失敗は部分的な導入として報告し、Jarvis の導入結果は残る場合があります。[QMD の説明（英語）](docs/experience.md)を参照してください。
+
 <details>
 <summary>移行コマンド・パス・上限</summary>
 
