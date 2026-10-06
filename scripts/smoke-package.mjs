@@ -63,6 +63,10 @@ try {
   assert.equal(manifest.version, expected.version);
   assert.deepEqual(manifest.bin, { 'open-jarvis': 'bin/open-jarvis.mjs' });
   assert.ok(paths.includes('bin/open-jarvis.mjs'));
+  assert.ok(paths.includes('src/qmd.mjs'));
+  assert.equal(manifest.dependencies?.['@tobilu/qmd'], undefined);
+  assert.equal(manifest.optionalDependencies?.['@tobilu/qmd'], undefined);
+  assert.equal(manifest.scripts?.postinstall, undefined);
   assert.ok(paths.includes('payload/agents/jarvis_reviewer.toml'));
   assert.ok(paths.includes('payload/skills/jarvis-orchestrator/references/employees.md'));
   assert.ok(paths.includes('payload/skills/jarvis-orchestrator/references/employee-card.md'));
@@ -85,6 +89,8 @@ try {
   assert.equal(existsSync(home), false);
   const installed = invoke('install', '--yes');
   assert.equal(installed.status, 'installed');
+  assert.equal(installed.qmd, undefined);
+  assert.equal(existsSync(join(home, 'jarvis-state/qmd.json')), false);
   assert.equal(invoke('doctor').ok, true);
   assert.equal(invoke('install', '--yes').status, 'already-installed');
   assert.equal(invoke('employees').employees.length, 0);
@@ -92,6 +98,24 @@ try {
   assert.equal(invoke('employees', '--query', 'writing').employees.length, 1);
   assert.equal(invoke('employees', '--init', '--yes').created.length, 4);
   assert.equal(invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'simple').requested.effort, 'low');
+  const candidate = join(scratch, 'experience-candidate.md');
+  const proposal = invoke('experience', 'propose', '--id', 'package-smoke', '--title', 'Synthetic package evidence',
+    '--scope', 'personal', '--contributor', 'Package smoke', '--out', candidate);
+  assert.equal(proposal.status, 'candidate');
+  const metadata = JSON.parse(proposal.content.match(/^---\n([\s\S]*?)\n---/)[1]);
+  metadata.verifiedOn = '2026-10-05';
+  writeFileSync(candidate, `---\n${JSON.stringify(metadata)}\n---\n# Synthetic package evidence\n\n## Applicability\n\nIsolated package smoke only.\n\n## Method\n\nUse the packed CLI to preview, approve and reference Markdown.\n\n## Limits\n\nNo account, model request or production assets.\n\n## Evidence\n\nSynthetic assertion in scripts/smoke-package.mjs.\n`);
+  const preview = invoke('experience', 'approve', '--from', candidate, '--scope', 'personal');
+  assert.equal(preview.status, 'preview');
+  assert.equal(existsSync(preview.destination), false);
+  const experience = invoke('experience', 'approve', '--from', candidate, '--scope', 'personal', '--yes', '--source-sha256', preview.sourceSha256);
+  assert.equal(experience.status, 'approved');
+  const ref = invoke('experience', 'search', '--query', 'Synthetic').experiences[0].ref;
+  assert.equal(invoke('experience', 'show', '--ref', ref).sha256, experience.sha256);
+  const experiencePlan = invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'simple', '--experience', ref);
+  assert.equal(experiencePlan.selectedExperience[0].ref, ref);
+  assert.equal(experiencePlan.dispatched, false);
+  assert.equal(experiencePlan.runtimeVerified, false);
   const bundle = join(scratch, 'team.jarvis.json.gz');
   mkdirSync(join(home, 'jarvis/resources'), { recursive: true });
   writeFileSync(join(home, 'jarvis/resources/template.bin'), Buffer.from([0, 255, 23]));
@@ -105,10 +129,12 @@ try {
   assert.equal(second('install', '--models', join(secondHome, 'jarvis/models.json'), '--yes').status, 'installed');
   assert.equal(second('employees', '--query', 'backend').employees.length, 1);
   assert.equal(second('plan', '--employee', 'atlas-backend', '--difficulty', 'complex').requested.model, 'gpt-6.1-sol');
+  assert.equal(second('experience', 'show', '--ref', ref).sha256, experience.sha256);
+  assert.equal(second('plan', '--employee', 'atlas-backend', '--difficulty', 'complex', '--experience', ref).selectedExperience[0].ref, ref);
   assert.equal(invoke('rollback', '--manifest', installed.manifest).status, 'rolled-back');
   assert.equal(existsSync(join(home, 'config.toml')), false);
   console.log(JSON.stringify({ status: 'PASS', runner: pnpm ? 'pnpm dlx' : 'npm exec', package: tarball, files: paths.length,
-    checks: ['allowlisted distribution', `packed ${pnpm ? 'pnpm dlx' : 'npm exec'} entrypoint`, 'audit', 'install', 'doctor', 'idempotence', 'employee reuse', 'export/import', 'destination activation', 'rollback'],
+    checks: ['allowlisted distribution', `packed ${pnpm ? 'pnpm dlx' : 'npm exec'} entrypoint`, 'audit', 'install', 'doctor', 'idempotence', 'employee reuse', 'experience preview/approval/references', 'export/import', 'destination activation', 'rollback'],
     scope: 'synthetic home only; no model requests or publication' }, null, 2));
 } finally {
   const check = relative(tempRoot, realpathSync(scratch));

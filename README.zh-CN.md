@@ -187,6 +187,16 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open
 任务批准或临时雇佣不等于永久保存批准；不会自动训练模型或改写长期指令。
 无需每次强制评分、复盘或统计。详见[资产自进化（中文）](docs/asset-evolution.md)。
 
+**开发中，尚未发布：** Markdown 经验流程将任务内候选与获准的 `knowledge/experience/` 记录分开，保存前预览具体内容，并为计划选取当前原文引用。支持个人与项目范围及基本 Unicode 检索；可选接入另行安装的 QMD，按范围检索员工、技能和经验，按需使用嵌入模型进行语义检索，不可用时回退本地查询。员工卡链接到唯一经验原文，不重复复制正文。流程和经过审阅的本地包示例见 [Markdown 经验（英文）](docs/experience.md)。已发布的 0.1.3 包和下方 CI 结果不代表支持或验证了此功能。
+
+**可选安装 QMD（尚未发布）：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。非交互安装使用经过审阅的本地 feature 包：
+
+```sh
+npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+```
+
+替换实际包路径与绝对安装目录；也支持 `--qmd-manager pnpm`。仅安装引擎和平台 native 包，不自动下载模型、建索引、装驱动或完整 CUDA Toolkit。语义检索仍需模型与获准资产索引就绪。GPU 检测和 CPU 回退沿用 QMD；安装包存在不证明 CUDA 可用，Windows 可能还需可选 cuBLAS 运行库。QMD 失败会报告部分安装，Jarvis 可保留安装结果。详见 [QMD 说明（英文）](docs/experience.md)。
+
 <details>
 <summary>迁移命令、路径与限额</summary>
 

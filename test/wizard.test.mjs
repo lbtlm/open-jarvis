@@ -10,7 +10,7 @@ test('GPT-6 choices separate model and effort, reject Luna Ultra, and retain leg
     '2', 'medium', '',
     '2', 'high', '',
     'gpt-5.6-sol', 'high', '',
-    '', 'yes',
+    '', '', 'yes',
   ];
   const result = await collectChoices({ initial: {},
     ask: async () => { assert.ok(answers.length); return answers.shift(); }, write: () => {} });
@@ -30,7 +30,7 @@ test('recommendations are editable, existing preferences persist, and invalid an
     '', '', '',
     '', '', '',
     '', '', '',
-    '', 'yes',
+    '', '', 'yes',
   ];
   let output = '';
   const result = await collectChoices({
@@ -47,14 +47,14 @@ test('recommendations are editable, existing preferences persist, and invalid an
 });
 
 test('empty final confirmation declines installation', async () => {
-  const answers = Array(20).fill('');
+  const answers = Array(21).fill('');
   const result = await collectChoices({ initial: {}, ask: async () => answers.shift(), write: () => {} });
   assert.equal(result.confirmed, false);
   assert.equal(result.starter, 'none');
 });
 
 test('starter prefill can be changed and invalid answers are retried before confirmation', async () => {
-  const answers = [...Array(18).fill(''), 'unknown', 'office', 'yes'];
+  const answers = [...Array(18).fill(''), 'unknown', 'office', '', 'yes'];
   const result = await collectChoices({ initial: {}, initialStarter: 'writing',
     ask: async () => { assert.ok(answers.length); return answers.shift(); }, write: () => {} });
   assert.equal(result.starter, 'office');
