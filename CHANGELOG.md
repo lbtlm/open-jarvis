@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Standardize employee labels as `Employee name · Profession | Topic`, with meaningful optional identifiers and optional avatars; keep tool IDs separate and respect client display limits.
 - Add opt-in host-local QMD discovery instructions for employees, skills and experience, with bounded collection scope, embedding-only semantic lookup, source revalidation and a direct-file fallback. QMD remains an external optional dependency.
 - Add optional QMD engine setup to the installation wizard and `install --qmd`, with explicit directory, npm/pnpm and backend choices; leave ordinary installation and existing QMD connections unchanged. Reuse QMD's native automatic GPU selection and CPU fallback, and distinguish missing embedding assets from unavailable CUDA system libraries.
 - Add a user-controlled Markdown experience lifecycle with candidate previews, explicit approval, conflict-checked updates and scoped local search; reuse existing asset export/import without a new service or dependency.
