@@ -2,7 +2,7 @@
 
 Please keep changes small, reviewable, and tied to a stated behavior. Do not include personal Codex homes, credentials, backups, session logs, or production configuration in an issue, test fixture, or pull request.
 
-For code changes, follow the authoritative [engineering discipline](payload/skills/jarvis-orchestrator/SKILL.md#engineering-discipline-for-code-tasks): deliver complete behavior with minimum necessary complexity, reuse suitable implementations, and keep optimization scoped and behavior-verified. Acceptance considers concrete maintenance burden, not line counts or style preferences.
+For code changes, follow the authoritative [engineering discipline](payload/skills/jarvis-orchestrator/SKILL.md#engineering-discipline-for-code-tasks): deliver complete behavior with minimum necessary complexity, reuse and modify suitable implementations, consolidate duplication and remove replaced paths within affected responsibilities and call paths. Prefer root-cause repairs; explain necessary additions and verify behavior. Do not expand into unrelated cleanup or remove safety checks and meaningful coverage to reduce code. Include applicable decisions in the normal delivery summary without empty fields or a new report. Acceptance considers concrete maintenance burden, not line counts or style preferences.
 
 For changes to role routing or compatibility, preserve these contracts:
 
@@ -10,6 +10,8 @@ For changes to role routing or compatibility, preserve these contracts:
 - A generic-worker compatibility binding must load the installed role TOML instructions and explicitly bind model, effort, `service_tier`, and Fast settings. It must report requested settings separately from runtime-verified settings and block the delegation if Fast inheritance cannot be passed or verified.
 - Reviewer work requires independently verified effective read-only sandboxing, including when a native reviewer role is present. Do not treat role text as an access-control mechanism.
 - Dedicated employees and skills retain their own authorization and side-effect boundaries.
+- Match professional capability before selecting task model/effort/Fast; execution profiles are not employees. Code changes default to a matching employee, including Micro, unless the user explicitly asks the controller to implement. Micro reuses `jarvis_luna` with a compact assignment and no separate plan, ledger or routine reviewer. Default to one employee completing discovery, implementation and verification without a fixed phase relay.
+- `plan --effort LEVEL` is an explicit task override; absent it, preserve installed settings. The preview neither changes global configuration nor dispatches an employee; the selected override must be bound and verified at actual execution.
 
 Run the focused checks for your change. Before proposing a release-related change, run `npm ci --ignore-scripts`, `npm run check`, `npm test`, `npm run test:runtime -- --codex-bin /path/to/codex`, and `npm pack --ignore-scripts --dry-run` where the environment supports them. The runtime test must receive the actual executable rather than a `.cmd` wrapper; it installs into a temporary home and reads its runtime configuration without a model request. Windows validation should be reported separately from macOS/Linux CI coverage.
 

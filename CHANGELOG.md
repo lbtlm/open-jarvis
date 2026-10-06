@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
+
+- Prefer employee capability before task settings, including code micro-edits; keep one executor and scoped reuse, replacement cleanup and verification. Add `plan --difficulty micro` with installed-profile inheritance and model-validated task-only `--effort` overrides that require explicit runtime binding when different.
 
 ## 0.1.4
 

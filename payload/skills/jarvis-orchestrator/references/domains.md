@@ -1,6 +1,6 @@
 # Domain acceptance examples
 
-Read only the row relevant to the task. These are examples, not a closed domain list or mandatory teams. Start from the requested deliverable and use a relevant approved specialist. Direct questions and tiny verifiable edits stay with the controller. Model/effort comes from task difficulty and risk, independently of profession; preserve the user's controller and Fast choices.
+Read only the row relevant to the task. These are examples, not a closed domain list or mandatory teams. Start from the requested deliverable and match a relevant approved specialist before selecting task model/effort/Fast. Direct questions, lookups and tiny verifiable non-code edits stay with the controller; code changes default to employee execution, including micro edits, unless the user explicitly asks the controller to implement. Preserve the user's controller settings.
 
 | Domain | Useful method / skill selection | Acceptance evidence |
 | --- | --- | --- |

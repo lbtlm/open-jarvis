@@ -89,8 +89,8 @@ export function listEmployees({ home, project, query = '' }) {
     `${card.id} ${card.name} ${card.profession} ${JSON.stringify(card.keywords)}`.toLowerCase().includes(term)));
 }
 
-export function planTask({ home, project, employee, difficulty, risk = 'normal', skills = [], experiences = [] }) {
-  if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: light, simple, standard or complex. Direct work does not need a dispatch plan.');
+export function planTask({ home, project, employee, difficulty, effort, risk = 'normal', skills = [], experiences = [] }) {
+  if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: micro, light, simple, standard or complex. Direct work does not need a dispatch plan.');
   if (!['normal', 'critical'].includes(risk)) throw new Error('Choose risk: normal or critical.');
   const card = listEmployees({ home, project }).find(c => c.id === employee);
   if (!card) throw new Error('Employee not found; approve and save a card before planning.');
@@ -100,7 +100,9 @@ export function planTask({ home, project, employee, difficulty, risk = 'normal',
   let role;
   try { role = parseToml(readFileSync(rolePath, 'utf8')); } catch { throw new Error('Invalid execution profile TOML.'); }
   if (role.name !== `jarvis_${key}` || typeof role.model !== 'string' || !supportedEfforts(role.model).includes(role.model_reasoning_effort)) throw new Error('Invalid execution profile settings.');
+  if (effort !== undefined && !supportedEfforts(role.model).includes(effort)) throw new Error(`Selected model ${role.model} does not support Codex effort ${effort}.`);
   if (card.reviewer && role.sandbox_mode !== 'read-only') throw new Error('Reviewer profile must request a read-only sandbox.');
+  const installed = { model: role.model, effort: role.model_reasoning_effort, speed: role.service_tier ?? 'inherit' };
   const selectedSkills = skills.map(id => ({ id, path: findSkill(id, skillRoots(home, project)),
     source: card.skills.some(skill => skill.id === id) ? 'employee-card' : 'task-override', loaded: false }));
   const blockers = selectedSkills.filter(s => !s.path).map(s => `Missing skill: ${s.id}`);
@@ -110,7 +112,11 @@ export function planTask({ home, project, employee, difficulty, risk = 'normal',
     catch (error) { blockers.push(error.message); }
   }
   return { status: blockers.length ? 'blocked' : 'proposed', employee: card, difficulty, risk,
-    role: role.name, rolePath, requested: { model: role.model, effort: role.model_reasoning_effort, speed: role.service_tier ?? 'inherit' },
+    role: role.name, rolePath, installed, requested: { ...installed, effort: effort ?? installed.effort },
+    ...(effort !== undefined && effort !== installed.effort ? {
+      compatibilityBindingRequired: true,
+      bindingRequirement: 'The requested effort differs from the installed role. Dispatch requires a compatible explicit binding of the requested model, effort and speed; loading the native role alone does not apply this override.',
+    } : {}),
     selectedSkills, selectedExperience, availableSkills: card.skills, independentReviewRequired: !card.reviewer && risk === 'critical',
     blockers, approvalRequired: 'Use actual user approval for this scope; a saved card is not authorization.',
     dispatched: false, runtimeVerified: false,

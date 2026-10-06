@@ -21,12 +21,13 @@ function card(root, id, { name = id, keywords = [], skills = [], reviewer = fals
   writeFileSync(join(dir, `${id}.md`), `---\n${JSON.stringify({ name, profession: 'QA', keywords, skills, reviewer })}\n---\n${name}\n`);
 }
 
-function role(home, key, { model = 'gpt-6.1-sol', effort = 'medium', sandbox } = {}) {
+function role(home, key, { model = 'gpt-6.1-sol', effort = 'medium', sandbox, speed } = {}) {
   const dir = join(home, 'agents');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, `jarvis_${key}.toml`), [
     `name = "jarvis_${key}"`, `model = "${model}"`,
     `model_reasoning_effort = "${effort}"`,
+    ...(speed ? [`service_tier = "${speed}"`] : []),
     ...(sandbox ? [`sandbox_mode = "${sandbox}"`] : []), '',
   ].join('\n'));
 }
@@ -65,14 +66,42 @@ test('one employee receives difficulty-specific installed profiles; custom mappi
   const personal = join(home, 'jarvis', 'employees');
   mkdirSync(personal, { recursive: true });
   writeFileSync(join(personal, 'quinn-qa.md'), '---\n{"name":"Quinn","profession":"QA"}\n---\n');
+  role(home, 'luna', { model: 'vendor/custom-micro', effort: 'medium' });
   role(home, 'simple', { model: 'vendor/custom-simple', effort: 'low' });
   role(home, 'terra', { model: 'gpt-6.1-sol', effort: 'medium' });
   role(home, 'sol', { model: 'vendor/custom-complex', effort: 'high' });
-  const plans = ['simple', 'standard', 'complex'].map(difficulty =>
+  const plans = ['micro', 'light', 'simple', 'standard', 'complex'].map(difficulty =>
     planTask({ home, employee: 'quinn-qa', difficulty }));
-  assert.deepEqual(plans.map(plan => plan.role), ['jarvis_simple', 'jarvis_terra', 'jarvis_sol']);
-  assert.deepEqual(plans.map(plan => plan.requested.model), ['vendor/custom-simple', 'gpt-6.1-sol', 'vendor/custom-complex']);
-  assert.deepEqual(plans.map(plan => plan.requested.effort), ['low', 'medium', 'high']);
+  assert.deepEqual(plans.map(plan => plan.role), ['jarvis_luna', 'jarvis_luna', 'jarvis_simple', 'jarvis_terra', 'jarvis_sol']);
+  assert.deepEqual(plans.map(plan => plan.requested.model), ['vendor/custom-micro', 'vendor/custom-micro', 'vendor/custom-simple', 'gpt-6.1-sol', 'vendor/custom-complex']);
+  assert.deepEqual(plans.map(plan => plan.requested.effort), ['medium', 'medium', 'low', 'medium', 'high']);
+  for (const plan of plans) {
+    assert.deepEqual(plan.employee, plans[0].employee);
+    assert.deepEqual(plan.requested, plan.installed);
+    assert.equal(plan.compatibilityBindingRequired, undefined);
+  }
+});
+
+test('task effort overrides validate the installed model without changing role or controller files', t => {
+  const { home, project } = fixture(t);
+  card(project, 'atlas-backend', { name: 'Atlas' });
+  role(home, 'luna', { model: 'gpt-6-luna', effort: 'medium', speed: 'fast' });
+  const rolePath = join(home, 'agents/jarvis_luna.toml');
+  const configPath = join(home, 'config.toml');
+  writeFileSync(configPath, 'model = "custom-controller"\nmodel_reasoning_effort = "high"\n');
+  const before = [rolePath, configPath].map(path => readFileSync(path));
+  const options = { home, project, employee: 'atlas-backend', difficulty: 'micro' };
+  const plan = planTask({ ...options, effort: 'low', risk: 'critical' });
+  assert.deepEqual(plan.installed, { model: 'gpt-6-luna', effort: 'medium', speed: 'fast' });
+  assert.deepEqual(plan.requested, { ...plan.installed, effort: 'low' });
+  assert.equal(plan.compatibilityBindingRequired, true);
+  assert.match(plan.bindingRequirement, /native role alone does not apply/);
+  assert.equal(plan.runtimeVerified, false);
+  assert.equal(plan.dispatched, false);
+  assert.equal(plan.independentReviewRequired, true);
+  assert.equal(planTask({ ...options, effort: 'medium' }).compatibilityBindingRequired, undefined);
+  for (const effort of ['', 'invalid', 'ultra']) assert.throws(() => planTask({ ...options, effort }), /does not support Codex effort/);
+  assert.deepEqual([rolePath, configPath].map(path => readFileSync(path)), before);
 });
 
 test('missing skills block plans and reviewer roles must request read-only sandbox', t => {
