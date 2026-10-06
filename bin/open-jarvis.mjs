@@ -32,7 +32,8 @@ Options:
   --query WORDS              Filter employee names, professions and keywords
   --init                     Preview missing starter employee cards
   --employee ID              Saved employee for plan
-  --difficulty LEVEL         light|simple|standard|complex
+  --difficulty LEVEL         micro|light|simple|standard|complex
+  --effort LEVEL             Task effort override for plan; defaults to installed effort
   --risk LEVEL               normal|critical (critical requests independent review)
   --skill ID                 Local task skill; card or temporary binding (repeatable)
   --experience SCOPE:ID[@SHA256]  Select current approved experience for plan (repeatable)
@@ -124,7 +125,7 @@ try {
       home: { type: 'string' },
       project: { type: 'string' }, query: { type: 'string' }, init: { type: 'boolean' },
       starter: { type: 'string' },
-      employee: { type: 'string' }, difficulty: { type: 'string' }, risk: { type: 'string' },
+      employee: { type: 'string' }, difficulty: { type: 'string' }, effort: { type: 'string' }, risk: { type: 'string' },
       skill: { type: 'string', multiple: true }, out: { type: 'string' }, from: { type: 'string' },
       experience: { type: 'string', multiple: true }, format: { type: 'string' },
       id: { type: 'string' }, title: { type: 'string' }, scope: { type: 'string' }, ref: { type: 'string' },
@@ -173,7 +174,7 @@ try {
     }
     if (command !== 'install' && values.interactive) throw new Error('--interactive is only valid for install.');
     if (values.yes && !['install', 'import', 'employees'].includes(command) && !(experienceCommand && positionals[1] === 'approve')) throw new Error('--yes is only valid for install, import, employees --init or experience approve.');
-    const allowed = {project:['employees','plan','export','import','experience'],query:['employees','experience'],init:['employees'],employee:['plan'],difficulty:['plan'],risk:['plan'],skill:['plan'],experience:['plan'],format:['plan'],out:['export','experience'],from:['import','experience'],'skill-root':['export'],id:['experience'],title:['experience'],scope:['experience'],ref:['experience'],tag:['experience'],contributor:['experience'],'source-sha256':['experience'],'expected-sha256':['experience']};
+    const allowed = {project:['employees','plan','export','import','experience'],query:['employees','experience'],init:['employees'],employee:['plan'],difficulty:['plan'],effort:['plan'],risk:['plan'],skill:['plan'],experience:['plan'],format:['plan'],out:['export','experience'],from:['import','experience'],'skill-root':['export'],id:['experience'],title:['experience'],scope:['experience'],ref:['experience'],tag:['experience'],contributor:['experience'],'source-sha256':['experience'],'expected-sha256':['experience']};
     for (const [flag, commands] of Object.entries(allowed)) if (values[flag] !== undefined && !commands.includes(command)) throw new Error(`--${flag} is not valid for ${command}.`);
     if (values.format !== undefined && (values.format !== 'markdown' || json)) throw new Error('--format must be markdown and cannot be combined with --json.');
     if (experienceCommand) {
@@ -211,7 +212,7 @@ try {
       const scoped = { home: options.home, ...(values.project ? { project: resolve(values.project) } : {}) };
       let result;
       if (command === 'employees') result = values.init ? seedEmployees({ ...scoped, starter: values.starter ?? 'development', apply: !!values.yes }) : { status: 'listed', employees: listEmployees({ ...scoped, query: values.query }) };
-      if (command === 'plan') result = planTask({ ...scoped, employee: values.employee, difficulty: values.difficulty, risk: values.risk, skills: values.skill, experiences: values.experience });
+      if (command === 'plan') result = planTask({ ...scoped, employee: values.employee, difficulty: values.difficulty, effort: values.effort, risk: values.risk, skills: values.skill, experiences: values.experience });
       if (command === 'experience') {
         const experienceOptions = { ...scoped, id: values.id, title: values.title, scope: values.scope, tags: values.tag, contributors: values.contributor,
           out: values.out ? resolve(values.out) : undefined, from: values.from ? resolve(values.from) : undefined, ref: values.ref, query: values.query,

@@ -23,10 +23,10 @@ Open Jarvis 为 **Codex Desktop 和 CLI** 提供主控监督的协作流程。�
 
 需要 **Node.js 22+**（含 npm/npx）及已登录、支持独立子代理角色配置的 Codex。Desktop 和 CLI 共用 Codex home 时只需安装一次。
 
-从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.1.3** 为例，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
+从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.1.5** 为例，其下载地址在发布后可用，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install
 ```
 
 **在终端向导中选择配置：** 主控和执行角色的模型、思考强度、Fast，以及员工模板。模板默认为 `none`，可先安装协作规则，再按需添加员工。已有偏好优先；全新安装的主控推荐 Astra / High。Fast 单独选择，默认关闭，不会自动开启 Ultra 或切换到 Sol。
@@ -35,14 +35,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open
 <summary>pnpm 等价入口与经过审阅的本地安装包</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis install
 ```
 
 将审阅过的安装包放在当前目录后，任选一个入口：
 
 ```sh
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis install
 ```
 
 两种入口共用 Codex home、员工和资产。包通过 GitHub Releases 分发，**未发布到 npm registry**；依赖仍可能从 npm 获取，不保证完全离线。安装目标依次取 `--home`、`CODEX_HOME`、`~/.codex`。`--yes` 非交互安装并保留已有偏好。pnpm **10.18.1** 已在 Windows 本地验证，详见[兼容性说明（英文）](docs/compatibility.md)。
@@ -70,7 +70,7 @@ pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis install
 
 ```mermaid
 flowchart TD
-  A["用户请求"] --> B{"问答或微小修改？"}
+  A["用户请求"] --> B{"问答、查询或明确要求直改？"}
   B -->|是| C["主控直接处理"]
   B -->|否| D["匹配已批准员工"]
   D -->|无匹配| E["用户批准新员工"]
@@ -93,8 +93,8 @@ flowchart TD
 
 ## 员工与执行设置
 
-普通问答、单步查询和微小可验证修改由主控直接处理。
-其他任务先判断所需领域、交付物、语言以及方法和工具，再在能力匹配的已批准员工中优先复用。
+普通问答和单步查询由主控直接处理。代码修改包括微改也交给合适员工，用户明确要求直改时例外；主控负责调度和验收。
+先匹配员工专业能力：判断所需领域、交付物、语言以及方法和工具，再在能力匹配的已批准员工中优先复用。难度、模型、思考强度和 Fast 是本次配置；非代码微编辑采用与影响相称的验收，不增加额外流程。
 批准状态、空闲状态或固定模型都不能证明专业能力。
 缺少匹配岗位时，主控提出临时新员工，说明职责、技能与设置，获用户批准后派发。
 不会强行复用无关员工，也不会通过改名宣称已有能力。
@@ -109,10 +109,13 @@ flowchart TD
 | `reviewer` | GPT-6.1 Sol / High | 风险或证据触发的独立复核 |
 
 这些是推荐设置，已有用户选择优先。`terra` 是兼容键，不代表 GPT-6 Terra 产品。
+按实际影响和风险判断难度：微改 `micro`、小改 `light`/`simple`、常规中改 `standard`、大改或关键变化 `complex`。默认由一位合适员工完成调查、实施和验证，无强制 Luna 扫描或查文件、读文档、实施接力。每次实现同时复用适用代码、合并相关重复、原位修改、清理替代旧逻辑并做必要新增；范围内相关旧冗余可一起处理，行为验证优先于净减行数。
 Fast 与模型和思考强度分开选择；可用模型、权限和服务设置需在实际运行时核验。
 默认一个执行者；同时运行的子代理最多三个，包含 Reviewer、不含主控，并服从更低的用户或全局限额。
 执行者不递归委派。独立复核由明确风险或证据触发，并非每个任务都安排。
 无法保留必要模型、Fast 或 Reviewer 只读权限时，应报告该派发阻塞。
+
+**0.1.5 计划选项：** 此版本发布后，`plan --employee atlas-backend --difficulty micro` 映射现有 `luna` 档位，默认继承其安装设置。显式 `--effort low` 是仅覆盖本次思考强度的示例，合法性按所选模型核验；micro 不自动降低思考强度，不写全局设置、不改变员工身份。与安装档位不同的思考强度必须在运行时显式绑定；预览不能证明原生角色设置已改变。将 `atlas-backend` 替换为已有且匹配的员工 ID，详见[分流说明（英文）](docs/routing.md)。
 
 <details>
 <summary>员工模板与技能计划</summary>
@@ -130,9 +133,9 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 例如，预览写作候选卡后再明确写入：
 
 ```sh
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
@@ -151,10 +154,10 @@ npx --package ./open-jarvis-0.1.3.tgz open-jarvis plan --employee nova-writer --
 下表是**命令后缀**，不能单独作为 shell 命令运行。请把其中一项接在完整入口后：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis
 ```
 
-所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.1.3.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.1.3.tgz dlx open-jarvis`，后缀保持不变。
+所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.1.5.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis`，后缀保持不变。
 
 | 命令后缀 | 用途 |
 | --- | --- |
@@ -170,12 +173,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open
 例如，执行静态检查：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open-jarvis-0.1.3.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` 是占位路径，请换成实际安装清单。
 `--home PATH` 选择 Codex home；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx --package ./open-jarvis-0.1.3.tgz open-jarvis --help` 查看。
+完整参数可通过 `npx --package ./open-jarvis-0.1.5.tgz open-jarvis --help` 查看。
 `audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
 
 <a id="assets"></a>
@@ -187,12 +190,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.3/open
 任务批准或临时雇佣不等于永久保存批准；不会自动训练模型或改写长期指令。
 无需每次强制评分、复盘或统计。详见[资产自进化（中文）](docs/asset-evolution.md)。
 
-**开发中，尚未发布：** Markdown 经验流程将任务内候选与获准的 `knowledge/experience/` 记录分开，保存前预览具体内容，并为计划选取当前原文引用。支持个人与项目范围及基本 Unicode 检索；可选接入另行安装的 QMD，按范围检索员工、技能和经验，按需使用嵌入模型进行语义检索，不可用时回退本地查询。员工卡链接到唯一经验原文，不重复复制正文。流程和经过审阅的本地包示例见 [Markdown 经验（英文）](docs/experience.md)。已发布的 0.1.3 包和下方 CI 结果不代表支持或验证了此功能。
+**Markdown 经验：** Markdown 经验流程将任务内候选与获准的 `knowledge/experience/` 记录分开，保存前预览具体内容，并为计划选取当前原文引用。支持个人与项目范围及基本 Unicode 检索；可选接入另行安装的 QMD，按范围检索员工、技能和经验，按需使用嵌入模型进行语义检索，不可用时回退本地查询。员工卡链接到唯一经验原文，不重复复制正文。流程与 0.1.5 示例见 [Markdown 经验（英文）](docs/experience.md)，发布后可使用。
 
-**可选安装 QMD（尚未发布）：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。非交互安装使用经过审阅的本地 feature 包：
+**可选安装 QMD：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。0.1.5 发布后，非交互安装使用以下命令：
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 替换实际包路径与绝对安装目录；也支持 `--qmd-manager pnpm`。仅安装引擎和平台 native 包，不自动下载模型、建索引、装驱动或完整 CUDA Toolkit。语义检索仍需模型与获准资产索引就绪。GPU 检测和 CPU 回退沿用 QMD；安装包存在不证明 CUDA 可用，Windows 可能还需可选 cuBLAS 运行库。QMD 失败会报告部分安装，Jarvis 可保留安装结果。详见 [QMD 说明（英文）](docs/experience.md)。
@@ -207,10 +210,10 @@ npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /
 重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
 
 ```sh
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.3.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
 ```
 
 有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。

@@ -1,6 +1,6 @@
 # Markdown experience
 
-This feature is in development and unreleased. Use a reviewed local feature tarball for its CLI examples. The published 0.1.3 package does not include this workflow; the release CI linked in the READMEs does not verify it.
+This workflow is included in v0.1.5. The CLI examples use its GitHub Release tarball URL, which becomes available after publication.
 
 ## From evidence to reuse
 
@@ -31,11 +31,11 @@ QMD is an external optional tool, not an installer dependency or required servic
 
 Ordinary `open-jarvis install` installs neither QMD nor GPU packages. In the installation wizard, QMD defaults to **No**. Choosing Yes asks for npm or pnpm, an absolute installation directory, and native automatic backend selection or CPU mode. The final confirmation includes QMD and its platform dependencies. Skipping QMD preserves any existing installation and host-local connection. Jarvis deliberately does not add QMD to npm `optionalDependencies`, which can still be downloaded during a default install.
 
-For a reviewed local feature package, the equivalent noninteractive command is:
+After v0.1.5 is published, the equivalent noninteractive command is:
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
-pnpm --package=./open-jarvis-experience.tgz dlx open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager pnpm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager pnpm --qmd-device auto --yes
 ```
 
 Replace the package and installation paths; on Windows, an example directory is `D:/DevTools/JarvisQmd`. The installer uses a dedicated directory for the QMD program, package-manager cache, launcher, configuration and index/cache. It accepts a new empty directory or a recognized installation with the same settings, not an arbitrary existing project. It preserves an existing `<codex-home>/jarvis-state/qmd.json`. If QMD setup fails after Jarvis installation succeeds, the result is partial and retains the installation receipt and diagnostics.
@@ -86,11 +86,11 @@ This file guides the controller; QMD itself does not read it. Jarvis uses keywor
 
 ## Local-package walkthrough
 
-The following examples use `./open-jarvis-experience.tgz`, an illustrative filename for a reviewed tarball built from the feature branch. Replace it with your actual local package path. Do not substitute the published 0.1.3 download URL. Use either runner with the same command arguments:
+The following examples use the v0.1.5 GitHub Release tarball URL, available after publication. Use either runner with the same command arguments:
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis --help
-pnpm --package=./open-jarvis-experience.tgz dlx open-jarvis --help
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis --help
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis --help
 ```
 
 The examples explicitly select a task-local Codex home and the current project. Use the intended home and project consistently throughout the workflow. `--project` is required for project-scoped proposals and approval; omitting it must not silently select the working directory.
@@ -98,8 +98,8 @@ The examples explicitly select a task-local Codex home and the current project. 
 ### Create and review a candidate
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis experience propose --home ./task-output/codex-home --project . --id report-source-check --title "Check report sources before reuse" --scope project --tag office --contributor Clara --out ./task-output/experience-candidates/report-source-check.md
-npx --package ./open-jarvis-experience.tgz open-jarvis experience show --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience propose --home ./task-output/codex-home --project . --id report-source-check --title "Check report sources before reuse" --scope project --tag office --contributor Clara --out ./task-output/experience-candidates/report-source-check.md
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience show --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md
 ```
 
 The proposal is a template. Edit it to describe a real verified result before approval. The example contributor is illustrative; replace it with the actual contributor. Use repeatable `--tag` and `--contributor` options when needed. A candidate contains JSON frontmatter between `---` delimiters, with these fields:
@@ -118,14 +118,14 @@ The body requires nonempty `## Applicability`, `## Method`, `## Limits` and `## 
 ### Preview, obtain approval and save
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis experience approve --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md --scope project
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience approve --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md --scope project
 ```
 
 This previews content and destination and reports `sourceSha256` and `currentSha256`. Show the preview and evidence to the user, or apply an existing authorization that explicitly covers this content and destination. Copy the exact `sourceSha256` from the preview into the write command:
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis experience approve --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md --scope project --yes --source-sha256 SOURCE_SHA256
-npx --package ./open-jarvis-experience.tgz open-jarvis experience show --home ./task-output/codex-home --project . --ref project:report-source-check
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience approve --home ./task-output/codex-home --project . --from ./task-output/experience-candidates/report-source-check.md --scope project --yes --source-sha256 SOURCE_SHA256
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience show --home ./task-output/codex-home --project . --ref project:report-source-check
 ```
 
 `SOURCE_SHA256` is a placeholder for the full hexadecimal digest, not literal input. The write binds approval to the exact candidate content and saves it with `state: approved`. If the candidate changes after preview, preview again and obtain approval for the changed content before writing. `--yes` declares an explicit apply request; it does not prove that a human authorized it.
@@ -137,7 +137,7 @@ For personal experience, use `--scope personal` and `personal:report-source-chec
 ### Search and select current references
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis experience search --home ./task-output/codex-home --project . --scope project --query "report sources"
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis experience search --home ./task-output/codex-home --project . --scope project --query "report sources"
 ```
 
 Search selects active approved records from the selected home and explicitly selected project; `--scope` narrows this selection. Read the current record using `show --ref` and review its applicability. A successful lexical match is not proof that the method applies.
@@ -145,7 +145,7 @@ Search selects active approved records from the selected home and explicitly sel
 The existing `plan` command accepts repeatable `--experience` references. The following assumes Jarvis execution profiles are installed in the selected home and `clara-office` is an existing approved employee in the selected assets; replace it with the actual matching employee ID. Candidate creation and search do not require installing execution profiles.
 
 ```sh
-npx --package ./open-jarvis-experience.tgz open-jarvis plan --home ./task-output/codex-home --project . --employee clara-office --difficulty standard --experience project:report-source-check --format markdown
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis plan --home ./task-output/codex-home --project . --employee clara-office --difficulty standard --experience project:report-source-check --format markdown
 ```
 
 `--format markdown` writes a task contract to standard output and cannot be combined with `--json`. Add a digest as `--experience project:report-source-check@CURRENT_SHA256` to reject a stale reference, replacing the placeholder with the saved source's current digest. Without a digest the plan reads the current source. A missing, inactive or changed pinned reference must be resolved before dispatch.

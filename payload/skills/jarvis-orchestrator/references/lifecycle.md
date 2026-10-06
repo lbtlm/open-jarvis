@@ -1,6 +1,6 @@
 # Delegation lifecycle reference
 
-Use for multiple agents, long/resumable work, handoff, detailed review evidence, or closeout. The controller owns task state; workers report results, not concurrent ledger edits. A Light assignment needs only goal, owned paths, and acceptance, with the parent recording agent ID and mapping. No separate ledger file or acknowledgement-only turn is required.
+Use for multiple agents, long/resumable work, handoff, detailed review evidence, or closeout. The controller owns task state; workers report results, not concurrent ledger edits. A Micro/Light assignment needs only goal, owned paths, and acceptance, with the parent recording agent ID and requested settings. Micro needs no separate plan, ledger, acknowledgement-only turn or routine reviewer.
 
 Use the [employee naming rules](employees.md#employee-names-and-runtime-identity) throughout dispatch, progress, handoff, submission and controller acceptance.
 
@@ -36,11 +36,12 @@ Batch review findings. After one repair batch and targeted recheck, further revi
 ```text
 employee name / task label / runtime ID / assignment (task_id / attempt / revision when in use):
 changes and key paths/symbols:
+applicable code decisions: reuse / necessary additions and reasons / replaced-path cleanup:
 checks actually run / exit codes / relevant result:
 snapshot and evidence paths / reuse applicability:
 blockers / required controller decisions / optional findings:
 ```
 
-Keep raw logs outside the parent conversation when useful; include the relevant failure excerpt and evidence path. Reuse checks only when relevant source, dependencies, inputs, configuration, and environment remain applicable. Reviewer blockers identify the violated requirement/invariant, exact location, exposure condition, and evidence or specific missing critical check. Optional style and unrelated existing issues do not automatically block this task.
+Use the applicable fields in the normal summary, not a separate report; omit irrelevant empty fields. Keep raw logs outside the parent conversation when useful; include the relevant failure excerpt and evidence path. Reuse checks only when relevant source, dependencies, inputs, configuration, and environment remain applicable. Reviewer blockers identify the violated requirement/invariant, exact location, exposure condition, and evidence or specific missing critical check. Optional style and unrelated existing issues do not automatically block this task.
 
 Close with relevant evidence and remaining blockers. Do not require scores, KPIs, mandatory timing/rework statistics or a retrospective after every task. At a task boundary, a short handoff can preserve accepted results, remaining work, key paths, and reusable evidence without copying the full conversation.

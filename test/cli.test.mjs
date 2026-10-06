@@ -24,6 +24,41 @@ function json(result) {
   return JSON.parse(result.stdout);
 }
 
+test('plan-only effort overrides distinguish installed settings and leave configuration untouched', t => {
+  const home = fixture(t);
+  installApi({ home });
+  json(run(home, 'employees', '--init', '--yes', '--json'));
+  const paths = [join(home, 'config.toml'), join(home, 'agents/jarvis_luna.toml')];
+  const before = paths.map(path => readFileSync(path));
+  const args = ['plan', '--employee', 'atlas-backend', '--difficulty', 'micro'];
+  const inherited = json(run(home, ...args, '--json'));
+  assert.equal(inherited.requested.effort, 'medium');
+  assert.deepEqual(inherited.requested, inherited.installed);
+  const plan = json(run(home, ...args, '--effort', 'low', '--json'));
+  assert.equal(plan.employee.id, inherited.employee.id);
+  assert.equal(plan.installed.effort, 'medium');
+  assert.equal(plan.requested.effort, 'low');
+  assert.equal(plan.compatibilityBindingRequired, true);
+  assert.equal(plan.runtimeVerified, false);
+  assert.equal(plan.dispatched, false);
+  const markdown = run(home, ...args, '--effort', 'low', '--format', 'markdown');
+  assert.equal(markdown.status, 0, markdown.stderr);
+  assert.match(markdown.stdout, /Installed effort: medium/);
+  assert.match(markdown.stdout, /Requested effort: low/);
+  assert.match(markdown.stdout, /compatible explicit binding/);
+  for (const effort of ['', 'invalid', 'ultra']) {
+    const rejected = run(home, ...args, `--effort=${effort}`, '--json');
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stderr, /does not support Codex effort/);
+  }
+  for (const command of ['audit', 'install', 'doctor', 'employees', 'export', 'import', 'rollback']) {
+    const rejected = run(home, command, '--effort', 'low', '--json', ...(command === 'rollback' ? ['--manifest', 'unused'] : []));
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stderr, new RegExp(`--effort is not valid for ${command}`));
+  }
+  assert.deepEqual(paths.map(path => readFileSync(path)), before);
+});
+
 test('explicit legacy receipts preserve CLI and wizard preferences with partial overrides', t => {
   const root = fixture(t), home = join(root, 'home');
   const models = {
