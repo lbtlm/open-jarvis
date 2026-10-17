@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { realpathSync, mkdtempSync, rmSync } from 'node:fs';
+import { realpathSync, mkdtempSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -86,5 +87,5 @@ try {
   }
   const check = relative(tempRoot, realpathSync(scratch));
   assert.ok(check && !check.startsWith('..') && check.startsWith('open-jarvis-runtime-'));
-  rmSync(scratch, { recursive: true, force: true });
+  await rm(scratch, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
