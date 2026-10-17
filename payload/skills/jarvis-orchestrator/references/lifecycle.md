@@ -17,13 +17,13 @@ attempt / revision / next checkpoint and soft budget:
 current snapshot / evidence locations / unresolved decisions:
 ```
 
-Start attempt/revision at 1 when versioned tracking is needed. Increase revision for changed scope/acceptance; increase attempt only after stopping the old writer before restart/reassignment. A late result with mismatched identifiers cannot authorize another action. For uncommitted work, identify both tracked and untracked changes; a commit ID alone does not describe a dirty worktree.
+Start attempt/revision at 1 when versioned tracking is needed. Increase revision for changed scope/acceptance; increase attempt only after stopping the old writer before restart/reassignment. A late result with mismatched identifiers cannot authorize another action. For uncommitted repository writes, identify tracked and untracked changes relevant to the affected paths; a commit ID alone does not describe that work. Apply the main skill's evidence-scope rule rather than repeatedly collecting whole-repository status/binary diffs for read-only work or outputs outside the repository. Preserve and report observed out-of-scope or concurrent changes.
 
 `READY -> RUNNING -> SUBMITTED -> REVIEW -> DONE`
 
 REVIEW means controller acceptance, not mandatory independent Reviewer work. Use the precise triggers in [SKILL.md](../SKILL.md#verify-and-converge). Missing requirements, unavailable environment, or unconfirmed old-writer shutdown can produce BLOCKED; elapsed time alone cannot. A cancelled task uses CANCELLED, not DONE.
 
-`RUNNING -> HANDOFF_PENDING -> READY` requires verified shutdown of the former writer and related tools before ownership changes. Preserve and inspect partial work. On resume, verify state before continuing. Do not replay external actions of unknown outcome.
+`RUNNING -> HANDOFF_PENDING -> READY` requires verified shutdown of the former writer and related tools before ownership changes. Preserve and inspect partial work; hand over the objective, completed work, key evidence locations, remaining work and necessary constraints briefly, without copying the full chat or adding a mandatory handoff form. The new executor reads its own required source sections. On resume, verify state before continuing. Do not replay external actions of unknown outcome.
 
 ## Checkpoints and repair
 
@@ -44,4 +44,4 @@ blockers / required controller decisions / optional findings:
 
 Use the applicable fields in the normal summary, not a separate report; omit irrelevant empty fields. Keep raw logs outside the parent conversation when useful; include the relevant failure excerpt and evidence path. Reuse checks only when relevant source, dependencies, inputs, configuration, and environment remain applicable. Reviewer blockers identify the violated requirement/invariant, exact location, exposure condition, and evidence or specific missing critical check. Optional style and unrelated existing issues do not automatically block this task.
 
-Close with relevant evidence and remaining blockers. Do not require scores, KPIs, mandatory timing/rework statistics or a retrospective after every task. At a task boundary, a short handoff can preserve accepted results, remaining work, key paths, and reusable evidence without copying the full conversation.
+Close with relevant evidence and remaining blockers. Do not require scores, KPIs, mandatory timing/rework statistics or a retrospective after every task. Apply the main skill's task-change and reading-reuse rules at the next objective: professional-card reuse and runtime-instance reuse are separate decisions.

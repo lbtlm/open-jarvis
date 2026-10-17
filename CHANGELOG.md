@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Reassess employee capability fit, runtime-instance compatibility and execution settings when the objective, deliverable, profession, project or owned scope materially changes. Treat employee-card reuse separately from runtime-instance reuse, and continue compatible work on the same objective with only the changed information.
+- Reuse applicable rules, skills, cards and retrieval results already read by the current executor; inspect newly relevant information or reread affected sources when they change or become unavailable. Begin scoped execution without empty acknowledgements and verify the affected paths without routine whole-repository diffs.
+- Preserve professional capability matching, approved Markdown experience checks and user-selected model, effort and Fast settings; task reassessment does not itself require repeated card discovery or global configuration changes.
+- Retry temporary-directory cleanup within a bounded window after runtime configuration checks to tolerate transient Windows file locks without hiding persistent failures.
+
 ## 0.1.5
 
 - Prefer employee capability before task settings, including code micro-edits; keep one executor and scoped reuse, replacement cleanup and verification. Add `plan --difficulty micro` with installed-profile inheritance and model-validated task-only `--effort` overrides that require explicit runtime binding when different.
