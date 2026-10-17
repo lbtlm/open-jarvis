@@ -12,7 +12,7 @@ npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.
 npx --yes --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
 ```
 
-The install command previews/protects managed changes and creates an installation manifest with backups when it writes. Save the exact manifest path returned by this upgrade. An unchanged install can return `already-installed` without a new manifest. Use `--home ABSOLUTE_PATH` consistently when targeting a different home, and first rehearse upgrades in a copied, disposable fixture rather than your active home.
+The install command previews/protects managed changes and writes only managed files whose desired content differs from the installed content. It creates an installation manifest with backups when it writes. Save the exact manifest path returned by this upgrade. When no files need changes, the install is a no-op and returns `already-installed` without a new manifest. Use `--home ABSOLUTE_PATH` consistently when targeting a different home, and first rehearse upgrades in a copied, disposable fixture rather than your active home.
 
 Existing model mappings, effort/Fast preferences and user-owned employee cards follow the installer's preservation rules. Do not infer that every manual edit can be merged automatically: when audit or install reports a blocked/conflicting ownership or configuration change, stop and review the named files. Preserve your edits and backups; do not force replacement. Legacy installations with an undiscovered receipt can be previewed with `--previous-manifest ABSOLUTE_PATH` (repeatable). The CLI validates ownership and manifest contents before using them; an arbitrary JSON file is not upgrade authorization.
 
