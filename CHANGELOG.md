@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+- Recover the applicable current rules, recognized templates or accepted examples, and actual consumer constraints for repeated deliverables. Use the same delivery contract during execution and acceptance without adding routine rereads, full-library scans, new ledgers or automatic memory updates.
+- Preserve the supported Reviewer `approval_policy = "never"` customization with `sandbox_mode = "read-only"` when a validated receipt and exact package or recorded baseline match establish ownership; continue refusing unrelated instruction or permission changes.
+- Record preserved Reviewer preferences and effective controller settings in schema-3 receipts while reading legacy v1/v2 receipts. Refresh stale validated ownership without rewriting already-correct files, retain prior receipts, and support rollback through the updated installer and exact upgrade manifest.
+- Reject concurrent Reviewer changes between validation and snapshot creation, and recheck all managed content before granting ownership in a new receipt, including zero-content refreshes.
+
 ## 0.1.6
 
 - Reassess employee capability fit, runtime-instance compatibility and execution settings when the objective, deliverable, profession, project or owned scope materially changes. Treat employee-card reuse separately from runtime-instance reuse, and continue compatible work on the same objective with only the changed information.

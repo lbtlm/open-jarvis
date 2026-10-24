@@ -27,7 +27,7 @@ const START = '<!-- JARVIS_START -->';
 const END = '<!-- JARVIS_END -->';
 // Persistent receipt identity: keep recognizing installations made before the Open Jarvis rename.
 const PACKAGE = 'codex-jarvis';
-const MANIFEST_VERSION = 2;
+const MANIFEST_VERSION = 3;
 const ROLE_KEYS = roleKeys;
 const ROLE_NAMES = ROLE_KEYS.map(key => `jarvis_${key}`);
 const EFFORTS = new Set(effortNames);
@@ -379,9 +379,38 @@ function walkFiles(root, prefix = '') {
   return result.sort();
 }
 
-function desiredFiles(home, models, controllerEffortExplicit) {
+// Only this restrictive reviewer customization is supported. A trusted receipt and
+// an exact package/baseline match must explain every other byte.
+function renderReviewer(source, current, prior) {
+  const saved = prior.reviewerApprovalPolicy;
+  if (current === null) return saved === 'never'
+    ? Buffer.concat([Buffer.from('approval_policy = "never"\n'), source]) : source;
+  const role = parseConfig(current, 'agents/jarvis_reviewer.toml');
+  const priorHash = prior.owned.get('agents/jarvis_reviewer.toml');
+  if (!Object.hasOwn(role, 'approval_policy')) {
+    if (saved !== undefined) fail('Modified reviewer approval policy needs manual merge.');
+    return source;
+  }
+  if (role.approval_policy !== 'never' || role.sandbox_mode !== 'read-only' || !priorHash) {
+    fail('Unsupported reviewer customization needs manual merge.');
+  }
+  const text = decode(current);
+  const stripped = encodeLike(current, text.replace(/^[ \t]*approval_policy[ \t]*=[ \t]*"never"[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)/m, ''));
+  const bare = { ...role };
+  delete bare.approval_policy;
+  if (!isDeepStrictEqual(parseConfig(stripped, 'reviewer without approval policy'), bare)) {
+    fail('Reviewer approval policy syntax needs manual merge.');
+  }
+  const matchesPackage = stripped.equals(source);
+  const matchesReceipt = hash(stripped) === priorHash || (saved === 'never' && hash(current) === priorHash);
+  if (!matchesPackage && !matchesReceipt) fail('Modified reviewer file needs manual merge.');
+  return matchesPackage ? current : Buffer.concat([Buffer.from('approval_policy = "never"\n'), source]);
+}
+
+function desiredFiles(home, models, controllerEffortExplicit, prior) {
   assertNoLinks(home, home);
   const files = new Map();
+  let reviewerSnapshot = null;
   for (const aggregate of ['config.toml', 'AGENTS.md']) {
     const target = targetPath(home, aggregate);
     assertNoLinks(home, target);
@@ -392,18 +421,25 @@ function desiredFiles(home, models, controllerEffortExplicit) {
   }
   for (const key of ROLE_KEYS) {
     const relativePath = `agents/jarvis_${key}.toml`;
-    files.set(relativePath, renderRole(readFileSync(join(PAYLOAD, relativePath)), key, models));
+    let rendered = renderRole(readFileSync(join(PAYLOAD, relativePath)), key, models);
+    if (key === 'reviewer') {
+      const target = targetPath(home, relativePath);
+      assertNoLinks(home, target);
+      reviewerSnapshot = existsSync(target) ? readFileSync(target) : null;
+      rendered = renderReviewer(rendered, reviewerSnapshot, prior);
+    }
+    files.set(relativePath, rendered);
   }
   for (const relativePath of walkFiles(join(PAYLOAD, 'skills', 'jarvis-orchestrator'), 'skills/jarvis-orchestrator')) {
     files.set(relativePath, readFileSync(join(PAYLOAD, ...relativePath.split('/'))));
   }
   if (!files.has('skills/jarvis-orchestrator/SKILL.md')) fail('Payload is missing the orchestration skill.');
-  return files;
+  return { files, reviewerSnapshot };
 }
 
 function validateManifestShape(manifest, home, source, allowV1 = true) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) fail(`Invalid installation manifest: ${source}`);
-  if (![...(allowV1 ? [1] : []), MANIFEST_VERSION].includes(manifest.version)) fail(`Unsupported installation manifest version: ${source}`);
+  if (![...(allowV1 ? [1] : []), 2, MANIFEST_VERSION].includes(manifest.version)) fail(`Unsupported installation manifest version: ${source}`);
   if (typeof manifest.home !== 'string' || resolve(manifest.home) !== home) fail('Previous installation manifest does not match target home.');
   if (!['installed', 'rolled-back'].includes(manifest.status) || !Array.isArray(manifest.files)) fail(`Incomplete installation manifest: ${source}`);
   const changedPaths = new Set();
@@ -416,7 +452,7 @@ function validateManifestShape(manifest, home, source, allowV1 = true) {
     if (record.before !== null && !/^[a-f0-9]{64}$/.test(record.before ?? '')) fail(`Invalid manifest checksum: ${source}`);
     if (!/^[a-f0-9]{64}$/.test(record.after ?? '')) fail(`Invalid manifest checksum: ${source}`);
   }
-  if (manifest.version === MANIFEST_VERSION) {
+  if (manifest.version >= 2) {
     if (manifest.package !== PACKAGE || !Array.isArray(manifest.ownedFiles)) fail(`Incomplete owned manifest: ${source}`);
     const ownedPaths = new Set();
     for (const record of manifest.ownedFiles) {
@@ -426,6 +462,9 @@ function validateManifestShape(manifest, home, source, allowV1 = true) {
       ownedPaths.add(clean);
       if (!/^[a-f0-9]{64}$/.test(record.sha256 ?? '')) fail(`Invalid owned checksum: ${source}`);
     }
+  }
+  if (manifest.settings?.reviewerApprovalPolicy !== undefined && (manifest.version < 3 || manifest.settings.reviewerApprovalPolicy !== 'never')) {
+    fail(`Unsupported reviewer approval policy in manifest: ${source}`);
   }
   return manifest;
 }
@@ -491,8 +530,9 @@ function ownership(options, home) {
       : manifest.ownedFiles;
     for (const record of records) owned.set(validateRelativePath(record.path), record.sha256);
   }
-  const latestSettings = [...selected].reverse().find(item => item.manifest.version === MANIFEST_VERSION)?.manifest?.settings?.models;
-  return { owned, manifests: selected.map(item => item.path), models: latestSettings };
+  const latestSettings = [...selected].reverse().find(item => item.manifest.version >= 2)?.manifest?.settings?.models;
+  const reviewerApprovalPolicy = [...selected].reverse().find(item => item.manifest.version >= 2)?.manifest?.settings?.reviewerApprovalPolicy;
+  return { owned, manifests: selected.map(item => item.path), models: latestSettings, reviewerApprovalPolicy };
 }
 
 function checkRoleCollisions(home, desired) {
@@ -513,23 +553,35 @@ function plan(options) {
   const prior = ownership(options, home);
   const models = resolveModels(options.models, options.controllerEffort, prior.models ?? defaultModels);
   const effortExplicit = options.controllerEffort !== undefined || options.models?.controller?.effort !== undefined;
-  const desired = desiredFiles(home, models, effortExplicit);
+  const { files: desired, reviewerSnapshot } = desiredFiles(home, models, effortExplicit, prior);
+  // Record the effective controller choice rather than a stale receipt default.
+  models.controller.effort = parseConfig(desired.get('config.toml')).model_reasoning_effort;
+  const reviewerApprovalPolicy = parseConfig(desired.get('agents/jarvis_reviewer.toml')).approval_policy;
   checkRoleCollisions(home, desired);
   const changes = [];
   for (const [relativePath, content] of desired) {
     const target = targetPath(home, relativePath);
     assertNoLinks(home, target);
     const before = existsSync(target) ? readFileSync(target) : null;
+    if (relativePath === 'agents/jarvis_reviewer.toml'
+      && ((before === null) !== (reviewerSnapshot === null) || (before !== null && !before.equals(reviewerSnapshot)))) {
+      fail(`Concurrent edit detected: ${relativePath}`);
+    }
     if (before?.equals(content)) continue;
     const priorHash = prior.owned.get(relativePath);
     const aggregate = relativePath === 'config.toml' || relativePath === 'AGENTS.md';
-    if (before !== null && hash(before) !== priorHash) {
+    const preservedReviewer = relativePath === 'agents/jarvis_reviewer.toml' && reviewerApprovalPolicy === 'never';
+    if (before !== null && hash(before) !== priorHash && !preservedReviewer) {
       if (aggregate && prior.owned.size) fail(`Modified aggregate file needs manual merge: ${relativePath}`);
       if (!aggregate) fail(`Existing different file needs manual merge: ${relativePath}`);
     }
     changes.push({ relativePath, target, before, content, beforeMode: before === null ? null : fileMode(target), afterMode: before === null ? (relativePath === 'config.toml' ? 0o600 : 0o644) : fileMode(target) });
   }
-  return { home, models, desired, changes, priorManifests: prior.manifests };
+  const ownershipRefresh = prior.manifests.length > 0 && (
+    [...desired].some(([path, content]) => prior.owned.get(path) !== hash(content))
+    || !isDeepStrictEqual(models, prior.models)
+    || reviewerApprovalPolicy !== prior.reviewerApprovalPolicy);
+  return { home, models, desired, changes, ownershipRefresh, reviewerApprovalPolicy, priorManifests: prior.manifests };
 }
 
 export function audit(options = {}) {
@@ -545,6 +597,7 @@ export function audit(options = {}) {
     filesChanged: prepared.changes.length,
     files: [...prepared.desired].map(([path, content]) => ({ path, willChange: prepared.changes.some(change => change.relativePath === path), sha256: hash(content) })),
     ownershipManifests: prepared.priorManifests,
+    ownershipRefresh: prepared.ownershipRefresh,
     models: selected,
     serviceTier: generatedConfig.service_tier ?? null,
     maxSubagents: Math.min(3, generatedConfig.agents.max_concurrent_threads_per_session),
@@ -622,11 +675,11 @@ export function install(options = {}) {
   installLocks.add(home);
   try {
     const preview = plan(options);
-    if (preview.changes.length === 0) return { status: 'already-installed', filesChanged: 0, target: home };
+    if (preview.changes.length === 0 && !preview.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home };
     const releaseLock = acquireOperationLock(home);
     try {
       const prepared = plan(options);
-      if (prepared.changes.length === 0) return { status: 'already-installed', filesChanged: 0, target: home };
+      if (prepared.changes.length === 0 && !prepared.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home };
       const state = targetPath(home, 'jarvis-state');
       const backup = join(state, 'backups', `${new Date().toISOString().replaceAll(/[-:.]/g, '')}-${randomUUID()}`);
       assertNoLinks(home, state);
@@ -648,7 +701,8 @@ export function install(options = {}) {
       home,
       status: 'prepared',
       createdAt: new Date().toISOString(),
-      settings: { models: prepared.models },
+      settings: { models: prepared.models,
+        ...(prepared.reviewerApprovalPolicy ? { reviewerApprovalPolicy: prepared.reviewerApprovalPolicy } : {}) },
       previousManifests: prepared.priorManifests,
       files: records,
       ownedFiles: [...prepared.desired].map(([path, content]) => ({ path, sha256: hash(content) })),
@@ -670,6 +724,13 @@ export function install(options = {}) {
           }
           atomicWrite(change.target, change.content, change.afterMode);
           written.push({ ...change, home });
+        }
+        // Unchanged files also grant ownership in the new receipt. Validate them
+        // under the operation lock, including zero-content ownership refreshes.
+        for (const [path, content] of prepared.desired) {
+          const target = targetPath(home, path);
+          assertNoLinks(home, target);
+          if (!existsSync(target) || !readFileSync(target).equals(content)) fail(`Concurrent edit detected: ${path}`);
         }
         manifest.status = 'installed';
         atomicWrite(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)), 0o600);
@@ -724,7 +785,7 @@ export function rollback(options = {}) {
       if (item.original === null) unlinkSync(item.target);
       else atomicWrite(item.target, item.original, item.record.beforeMode ?? 0o600);
     }
-    if (manifest.version === MANIFEST_VERSION) {
+    if (manifest.version >= 2) {
       manifest.status = 'rolled-back';
       manifest.rolledBackAt = new Date().toISOString();
       atomicWrite(resolve(manifestPath), Buffer.from(JSON.stringify(manifest, null, 2)), 0o600);
@@ -778,7 +839,8 @@ export function doctor(options = {}) {
       try {
         assertNoLinks(home, rolePath);
         const raw = readFileSync(rolePath);
-        const expected = renderRole(readFileSync(join(PAYLOAD, relativePath)), key, expectedModels);
+        let expected = renderRole(readFileSync(join(PAYLOAD, relativePath)), key, expectedModels);
+        if (key === 'reviewer') expected = renderReviewer(expected, raw, ownership({}, home));
         const role = parseConfig(raw, relativePath);
         ok = role.name === `jarvis_${key}` && role.model === expectedModels[key].model
           && role.model_reasoning_effort === expectedModels[key].effort
