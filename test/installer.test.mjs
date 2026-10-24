@@ -13,7 +13,9 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
 import { audit, defaultModels, doctor, install, recommend, rollback } from '../src/installer.mjs';
@@ -175,6 +177,9 @@ test('install is idempotent, preserves custom mappings automatically, and doctor
   assert.equal(report.ok, true);
   assert.equal(report.runtimeVerification, 'not-performed');
   assert.match(report.runtimeNote, /does not prove/i);
+  const refreshed = install({ home });
+  assert.equal(refreshed.status, 'installed');
+  assert.equal(refreshed.filesChanged, 0);
   assert.equal(install({ home }).status, 'already-installed');
 });
 
@@ -427,4 +432,216 @@ test('symlink or junction targets are refused', () => {
   symlinkSync(outside, join(home, 'agents'), process.platform === 'win32' ? 'junction' : 'dir');
   assert.throws(() => audit({ home }), /symlink or junction/);
   assert.deepEqual(defaultModels.reviewer, { model: 'gpt-6.1-sol', effort: 'high' });
+});
+
+
+test('reviewer never and effective controller effort refresh ownership without changing files', () => {
+  const { home } = fixture();
+  mkdirSync(home);
+  writeFileSync(join(home, 'config.toml'), 'approval_policy = "on-request"\nsandbox_mode = "workspace-write"\n');
+  const initial = install({ home, models: { controller: { fast: false }, sol: { fast: false } } });
+  const initialReceipt = readFileSync(initial.manifest);
+  const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+  const customized = Buffer.from('approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
+  writeFileSync(reviewer, customized);
+  const config = join(home, 'config.toml');
+  const preferredConfig = readFileSync(config, 'utf8').replace('model_reasoning_effort = "high"', 'model_reasoning_effort = "ultra"');
+  writeFileSync(config, preferredConfig);
+  const personal = join(home, 'jarvis/employees/personal.md');
+  mkdirSync(dirname(personal), { recursive: true });
+  writeFileSync(personal, 'user-owned sentinel');
+  const preview = audit({ home });
+  assert.equal(preview.filesChanged, 0);
+  assert.equal(preview.ownershipRefresh, true);
+  assert.equal(preview.models.controller.effort, 'ultra');
+  const refreshed = install({ home });
+  assert.equal(refreshed.filesChanged, 0);
+  assert.equal(refreshed.status, 'installed');
+  const receipt = JSON.parse(readFileSync(refreshed.manifest, 'utf8'));
+  assert.equal(receipt.version, 3);
+  assert.deepEqual(receipt.files, []);
+  assert.equal(receipt.settings.reviewerApprovalPolicy, 'never');
+  assert.equal(receipt.settings.models.controller.effort, 'ultra');
+  assert.equal(receipt.settings.models.controller.fast, false);
+  assert.equal(receipt.settings.models.sol.fast, false);
+  assert.deepEqual(readFileSync(initial.manifest), initialReceipt);
+  assert.deepEqual(readFileSync(reviewer), customized);
+  assert.equal(readFileSync(config, 'utf8'), preferredConfig);
+  assert.equal(doctor({ home }).ok, true);
+  assert.equal(audit({ home }).ownershipRefresh, false);
+  assert.equal(install({ home }).status, 'already-installed');
+  assert.equal(rollback({ home, manifest: refreshed.manifest }).filesRestored, 0);
+  assert.deepEqual(readFileSync(reviewer), customized);
+  assert.equal(readFileSync(config, 'utf8'), preferredConfig);
+  assert.equal(readFileSync(personal, 'utf8'), 'user-owned sentinel');
+});
+
+test('reviewer customization survives distinct payload upgrade, rollback and re-upgrade', async () => {
+  const { root, home } = fixture();
+  const previous = install({ home, models: { luna: { fast: false }, sol: { fast: true } } });
+  const previousReceipt = readFileSync(previous.manifest);
+  const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+  writeFileSync(reviewer, 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
+  const original = readFileSync(reviewer);
+  const refreshed = install({ home });
+  assert.equal(refreshed.filesChanged, 0);
+  const refreshReceipt = readFileSync(refreshed.manifest);
+  const packageRoot = join(root, 'next-payload');
+  mkdirSync(join(packageRoot, 'src'), { recursive: true });
+  for (const file of ['installer.mjs', 'profiles.mjs']) cpSync(join(process.cwd(), 'src', file), join(packageRoot, 'src', file));
+  cpSync(join(process.cwd(), 'payload'), join(packageRoot, 'payload'), { recursive: true });
+  const nextRole = join(packageRoot, 'payload/agents/jarvis_reviewer.toml');
+  writeFileSync(nextRole, readFileSync(nextRole, 'utf8').replace('developer_instructions = """', 'developer_instructions = """\nNext package reviewer policy.'));
+  const next = await import(pathToFileURL(join(packageRoot, 'src/installer.mjs')).href);
+  const upgrade = next.install({ home });
+  const upgradedRole = readFileSync(reviewer);
+  assert.match(upgradedRole.toString(), /Next package reviewer policy/);
+  assert.equal(parseToml(upgradedRole.toString()).approval_policy, 'never');
+  assert.equal(parseToml(upgradedRole.toString()).sandbox_mode, 'read-only');
+  assert.equal(next.doctor({ home }).ok, true);
+  assert.equal(next.install({ home }).status, 'already-installed');
+  next.rollback({ home, manifest: upgrade.manifest });
+  assert.deepEqual(readFileSync(reviewer), original);
+  assert.deepEqual(readFileSync(previous.manifest), previousReceipt);
+  assert.deepEqual(readFileSync(refreshed.manifest), refreshReceipt);
+  assert.equal(doctor({ home }).ok, true);
+  const again = next.install({ home });
+  assert.equal(again.status, 'installed');
+  assert.deepEqual(readFileSync(reviewer), upgradedRole);
+  assert.equal(next.doctor({ home }).ok, true);
+  writeFileSync(reviewer, readFileSync(reviewer, 'utf8') + '\n# later user edit\n');
+  const edited = readFileSync(reviewer);
+  assert.throws(() => next.rollback({ home, manifest: again.manifest }), /Changed after installation/);
+  assert.deepEqual(readFileSync(reviewer), edited);
+});
+
+test('ownership refresh rejects unrecognized reviewer changes without writing', () => {
+  for (const edit of [
+    text => 'approval_policy = "on-request"\n' + text,
+    text => 'approval_policy = "never"\n' + text.replace('sandbox_mode = "read-only"', 'sandbox_mode = "workspace-write"'),
+    text => 'approval_policy = "never"\nunknown_permission = true\n' + text,
+    text => 'approval_policy = "never"\n' + text.replace('developer_instructions = """', 'developer_instructions = """\nUnapproved local instructions.'),
+  ]) {
+    const { home } = fixture();
+    const initial = install({ home });
+    const receipt = readFileSync(initial.manifest);
+    const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+    const changed = edit(readFileSync(reviewer, 'utf8'));
+    writeFileSync(reviewer, changed);
+    assert.throws(() => install({ home }), /manual merge/);
+    assert.equal(readFileSync(reviewer, 'utf8'), changed);
+    assert.deepEqual(readFileSync(initial.manifest), receipt);
+    assert.equal(doctor({ home }).checks.find(check => check.name === 'role:reviewer').ok, false);
+  }
+});
+
+test('custom reviewer policy requires a valid installed receipt and rejects invalid stored preferences', () => {
+  const { home } = fixture();
+  const installed = install({ home });
+  const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+  writeFileSync(reviewer, 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
+  const manifest = JSON.parse(readFileSync(installed.manifest, 'utf8'));
+  manifest.settings.reviewerApprovalPolicy = 'on-request';
+  const bad = join(dirname(installed.manifest), 'invalid.json');
+  writeFileSync(bad, JSON.stringify(manifest));
+  assert.throws(() => audit({ home, previousManifests: [bad] }), /Unsupported reviewer approval/);
+  rmSync(join(home, 'jarvis-state'), { recursive: true });
+  assert.throws(() => install({ home }), /manual merge/);
+});
+
+
+test('already synchronized package guidance gains fresh ownership without rewriting content', async () => {
+  const { root, home } = fixture();
+  const initial = install({ home });
+  const oldReceipt = readFileSync(initial.manifest);
+  const packageRoot = join(root, 'synced-payload');
+  mkdirSync(join(packageRoot, 'src'), { recursive: true });
+  for (const file of ['installer.mjs', 'profiles.mjs']) cpSync(join(process.cwd(), 'src', file), join(packageRoot, 'src', file));
+  cpSync(join(process.cwd(), 'payload'), join(packageRoot, 'payload'), { recursive: true });
+  const skill = 'skills/jarvis-orchestrator/SKILL.md';
+  const newSkill = readFileSync(join(packageRoot, 'payload', skill), 'utf8') + '\nNew package guidance.\n';
+  writeFileSync(join(packageRoot, 'payload', skill), newSkill);
+  writeFileSync(join(home, skill), newSkill);
+  const blockPath = join(packageRoot, 'payload/AGENTS.block.md');
+  const newBlock = readFileSync(blockPath, 'utf8').replace('<!-- JARVIS_END -->', 'New package contract.\n<!-- JARVIS_END -->');
+  writeFileSync(blockPath, newBlock);
+  const agents = join(home, 'AGENTS.md');
+  const newAgents = readFileSync(agents, 'utf8').replace(/<!-- JARVIS_START -->[\s\S]*<!-- JARVIS_END -->/, newBlock.trim());
+  writeFileSync(agents, newAgents);
+  const next = await import(pathToFileURL(join(packageRoot, 'src/installer.mjs')).href);
+  assert.equal(next.audit({ home }).filesChanged, 0);
+  assert.equal(next.audit({ home }).ownershipRefresh, true);
+  const refresh = next.install({ home });
+  assert.deepEqual(JSON.parse(readFileSync(refresh.manifest, 'utf8')).files, []);
+  assert.equal(next.install({ home }).status, 'already-installed');
+  assert.deepEqual(readFileSync(initial.manifest), oldReceipt);
+  next.rollback({ home, manifest: refresh.manifest });
+  assert.equal(readFileSync(join(home, skill), 'utf8'), newSkill);
+  assert.equal(readFileSync(agents, 'utf8'), newAgents);
+});
+
+test('recognized reviewer setting never authorizes unrelated skill or managed-instruction drift', () => {
+  for (const relative of ['AGENTS.md', 'skills/jarvis-orchestrator/SKILL.md']) {
+    const { home } = fixture();
+    install({ home });
+    const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+    writeFileSync(reviewer, 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
+    const path = join(home, relative);
+    const changed = readFileSync(path, 'utf8').replace('Jarvis', 'Unapproved');
+    writeFileSync(path, changed);
+    assert.throws(() => install({ home }), /manual merge/);
+    assert.equal(readFileSync(path, 'utf8'), changed);
+  }
+});
+
+
+test('v2 ownership receipts remain readable and refresh to v3 without editing old records', () => {
+  const { home } = fixture();
+  const initial = install({ home });
+  const legacy = JSON.parse(readFileSync(initial.manifest, 'utf8'));
+  legacy.version = 2;
+  writeFileSync(initial.manifest, JSON.stringify(legacy));
+  const legacyBytes = readFileSync(initial.manifest);
+  const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+  writeFileSync(reviewer, 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
+  const fresh = install({ home });
+  const current = JSON.parse(readFileSync(fresh.manifest, 'utf8'));
+  assert.equal(current.version, 3);
+  assert.equal(current.settings.reviewerApprovalPolicy, 'never');
+  assert.deepEqual(readFileSync(initial.manifest), legacyBytes);
+  assert.equal(doctor({ home }).ok, true);
+  rollback({ home, manifest: fresh.manifest });
+  assert.equal(audit({ home }).ownershipRefresh, true);
+});
+
+
+test('reviewer edits between validation and before snapshot refuse the locked ownership refresh', () => {
+  const { home } = fixture();
+  const initial = install({ home });
+  const initialReceipt = readFileSync(initial.manifest);
+  const reviewer = join(home, 'agents/jarvis_reviewer.toml');
+  const customized = 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8');
+  writeFileSync(reviewer, customized);
+  const concurrent = customized + '\n# concurrent local edit\n';
+  const originalRead = fs.readFileSync;
+  let reads = 0;
+  fs.readFileSync = (...args) => {
+    if (typeof args[0] === 'string' && resolve(args[0]) === resolve(reviewer)) {
+      reads += 1;
+      // Each plan reads once for renderReviewer, once for collision checking,
+      // then once for its before snapshot. Interleave in the locked second plan.
+      if (reads === 6) writeFileSync(reviewer, concurrent);
+    }
+    return originalRead(...args);
+  };
+  syncBuiltinESMExports();
+  try {
+    assert.throws(() => install({ home }), /Concurrent edit detected/);
+    assert.equal(reads, 6, 'The edit must occur after reviewer validation in the second plan.');
+  } finally {
+    fs.readFileSync = originalRead;
+    syncBuiltinESMExports();
+  }
+  assert.equal(readFileSync(reviewer, 'utf8'), concurrent);
+  assert.deepEqual(readFileSync(initial.manifest), initialReceipt);
 });

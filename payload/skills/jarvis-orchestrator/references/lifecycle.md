@@ -9,6 +9,7 @@ Use the [employee naming rules](employees.md#employee-names-and-runtime-identity
 ```text
 task_id / parent / lane and reason:
 objective / scope / acceptance:
+applicable delivery contract when relevant: authority / recognized template or accepted example / consumer constraints and check:
 approved employee name / readable task label / supported task_name / returned runtime ID:
 owner and allowed paths / dependencies / invariants:
 selected experience when relevant: scoped ID / relative Markdown path / heading / content hash / applicability:
