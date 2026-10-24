@@ -1,6 +1,6 @@
 {
   "name": "open-jarvis",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Install supervised multi-model Jarvis workflows for Codex desktop and CLI.",
   "type": "module",
   "bin": { "open-jarvis": "bin/open-jarvis.mjs" },
