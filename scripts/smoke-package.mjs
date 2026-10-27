@@ -79,10 +79,10 @@ try {
   }
   const invokeAt = (targetHome, args) => JSON.parse(execManager(pnpm ? [
     '--silent', `--package=${tarball}`, 'dlx',
-    'open-jarvis', ...args, '--home', targetHome, '--json',
+    'open-jarvis', ...args, '--home', targetHome, '--assets-home', join(targetHome, 'jarvis'), '--json',
   ] : [
     'exec', '--yes', '--ignore-scripts', `--package=${tarball}`, '--',
-    'open-jarvis', ...args, '--home', targetHome, '--json',
+    'open-jarvis', ...args, '--home', targetHome, '--assets-home', join(targetHome, 'jarvis'), '--json',
   ]));
   const invoke = (...args) => invokeAt(home, args);
   invoke('audit');

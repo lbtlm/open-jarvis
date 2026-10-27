@@ -11,4 +11,4 @@
 
 本次派发另附：任务目标、文件归属、验收、模型、思考强度、Fast、权限，以及真实用户批准的范围。模型配置不写死在岗位职责里。
 
-保存前先查重复职责，展示最终文本与目标位置，再由用户决定：项目 `.jarvis/employees/iris-frontend.md`，或明确个人复用时 `$CODEX_HOME/jarvis/employees/iris-frontend.md`。不得把此示例的存在当成用户已批准。
+保存前先查重复职责，展示最终文本与目标位置，再由用户决定：项目 `.jarvis/employees/iris-frontend.md`，或明确个人复用时 `$JARVIS_HOME/employees/iris-frontend.md`。不得把此示例的存在当成用户已批准。

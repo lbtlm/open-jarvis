@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { TomlError } from 'smol-toml';
@@ -9,6 +8,8 @@ import { runWizard } from '../src/wizard.mjs';
 import { exportAssets, importAssets } from '../src/assets.mjs';
 import { listEmployees, seedEmployees, planTask } from '../src/team.mjs';
 import { starterEmployees } from '../src/starters.mjs';
+import { platformAdapter } from '../src/platforms/index.mjs';
+import { resolveAssetsHome } from '../src/asset-root.mjs';
 import { proposeExperience, showExperience, approveExperience, searchExperience, renderPlanMarkdown } from '../src/experience.mjs';
 import { previewQmd, installQmd } from '../src/qmd.mjs';
 
@@ -48,7 +49,9 @@ Options:
   --out FILE                 New export archive; never overwritten
   --from FILE                Archive to import; preview unless --yes
   --skill-root PATH          Replace default export roots (repeatable)
-  --home PATH                Codex home (CODEX_HOME or ~/.codex)
+  --platform NAME            codex (default), workbuddy, claude-code or cursor
+  --home PATH                Native platform home (Codex retains CODEX_HOME)
+  --assets-home PATH         Shared employees/experience root (or JARVIS_HOME)
   --controller-effort LEVEL  Explicitly select the main reasoning effort
   --models FILE              JSON role-to-model mapping overrides
   --fast on|off              Main controller Fast preference
@@ -87,10 +90,10 @@ function output(result, json) {
 
 function installWithStarter(options, starter) {
   // Check local template sources and destination paths before changing configuration.
-  seedEmployees({ home: options.home, starter });
+  seedEmployees({ ...options, starter });
   const installation = install(options);
   try {
-    return { ...installation, employees: seedEmployees({ home: options.home, starter, apply: true }) };
+    return { ...installation, employees: seedEmployees({ ...options, starter, apply: true }) };
   } catch (error) {
     process.exitCode = 1;
     return { status: 'partial', installation, manifest: installation.manifest ?? null,
@@ -123,6 +126,7 @@ try {
     strict: true,
     options: {
       home: { type: 'string' },
+      platform: { type: 'string' }, 'assets-home': { type: 'string' },
       project: { type: 'string' }, query: { type: 'string' }, init: { type: 'boolean' },
       starter: { type: 'string' },
       employee: { type: 'string' }, difficulty: { type: 'string' }, effort: { type: 'string' }, risk: { type: 'string' },
@@ -195,13 +199,16 @@ try {
     if (command === 'plan' && (!values.employee || !values.difficulty)) throw new Error('plan requires --employee ID and --difficulty LEVEL.');
     if (values.interactive && (values.yes || values.json)) throw new Error('--interactive cannot be combined with --yes or --json.');
     if (values.fast && !['on', 'off'].includes(values.fast)) throw new Error('--fast must be on or off.');
+    const adapter = platformAdapter(values.platform);
     const options = {
-      home: resolve(values.home ?? process.env.CODEX_HOME ?? join(homedir(), '.codex')),
+      platform: adapter.id,
+      home: resolve(values.home ?? adapter.defaultHome()),
       ...(values['controller-effort'] ? { controllerEffort: values['controller-effort'] } : {}),
       ...(values.models ? { models: JSON.parse(readFileSync(resolve(values.models), 'utf8').replace(/^\uFEFF/, '')) } : {}),
       ...(values['previous-manifest'] ? { previousManifests: values['previous-manifest'].map(p => resolve(p)) } : {}),
       ...(values.manifest ? { manifest: resolve(values.manifest) } : {}),
     };
+    if (command !== 'rollback') options.assetsHome = resolveAssetsHome({ ...options, assetsHome: values['assets-home'] ? resolve(values['assets-home']) : undefined });
     if (values.fast) {
       options.models ??= {};
       options.models.controller = { ...options.models.controller, fast: values.fast === 'on' };
@@ -209,9 +216,9 @@ try {
     const qmdOptions = values.qmd ? { dir: values['qmd-dir'], manager: values['qmd-manager'] ?? 'npm', device: values['qmd-device'] ?? 'auto' } : null;
     if (qmdOptions?.dir) previewQmd({ ...qmdOptions, home: options.home });
     if (['employees', 'plan', 'export', 'import', 'experience'].includes(command)) {
-      const scoped = { home: options.home, ...(values.project ? { project: resolve(values.project) } : {}) };
+      const scoped = { home: options.home, assetsHome: options.assetsHome, platform: options.platform, ...(values.project ? { project: resolve(values.project) } : {}) };
       let result;
-      if (command === 'employees') result = values.init ? seedEmployees({ ...scoped, starter: values.starter ?? 'development', apply: !!values.yes }) : { status: 'listed', employees: listEmployees({ ...scoped, query: values.query }) };
+      if (command === 'employees') result = values.init ? { ...seedEmployees({ ...scoped, starter: values.starter ?? 'development', apply: !!values.yes }), assetsHome: options.assetsHome } : { status: 'listed', assetsHome: options.assetsHome, employees: listEmployees({ ...scoped, query: values.query }) };
       if (command === 'plan') result = planTask({ ...scoped, employee: values.employee, difficulty: values.difficulty, effort: values.effort, risk: values.risk, skills: values.skill, experiences: values.experience });
       if (command === 'experience') {
         const experienceOptions = { ...scoped, id: values.id, title: values.title, scope: values.scope, tags: values.tag, contributors: values.contributor,
@@ -219,10 +226,10 @@ try {
           apply: !!values.yes, sourceSha256: values['source-sha256'], expectedSha256: values['expected-sha256'] };
         result = { propose: proposeExperience, show: showExperience, approve: approveExperience, search: searchExperience }[positionals[1]](experienceOptions);
       }
-      if (command === 'export') result = exportAssets({ ...scoped, out: resolve(values.out), skillRoots: values['skill-root']?.map(p => resolve(p)), models: existsSync(join(options.home, 'config.toml')) ? recommend(options).models : undefined });
+      if (command === 'export') result = exportAssets({ ...scoped, out: resolve(values.out), skillRoots: values['skill-root']?.map(p => resolve(p)), models: adapter.id !== 'codex' || existsSync(join(options.home, 'config.toml')) ? recommend(options).models : undefined });
       if (command === 'import') {
         result = importAssets({ ...scoped, from: resolve(values.from), apply: !!values.yes });
-        result.next = 'Assets only. Install Jarvis on the destination; optionally apply jarvis/models.json using install --models FILE --yes. Sign in to Codex separately and verify runtime settings and skill prerequisites.';
+        result.next = `Assets only. Model preferences belong to ${result.sourcePlatform} and were not applied. Install Jarvis for ${adapter.id}; sign in to that client separately and verify runtime settings and skill prerequisites.`;
       }
       if (values.format === 'markdown') console.log(renderPlanMarkdown(result));
       else output(result, json);
@@ -232,8 +239,8 @@ try {
         throw new Error('Noninteractive install requires --yes. Run install in a terminal to choose models, efforts and Fast settings.');
       }
       const proposed = recommend(options);
-      console.log(`Codex home: ${options.home}`);
-      const choices = await runWizard(proposed.models, { initialStarter: values.starter ?? 'none', initialQmd: qmdOptions, home: options.home });
+      console.log(`${adapter.id} home: ${options.home}\nShared assets: ${options.assetsHome}`);
+      const choices = await runWizard(proposed.models, { platform: adapter.id, initialStarter: values.starter ?? 'none', initialQmd: qmdOptions, home: options.home });
       if (!choices.confirmed) {
         output({ status: 'cancelled', message: 'No configuration was changed.' }, false);
       } else {

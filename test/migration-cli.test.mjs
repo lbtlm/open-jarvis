@@ -13,7 +13,7 @@ test('CLI migration preserves saved preferences before activation and reports co
   mkdirSync(join(source, 'jarvis'), {recursive:true});
   const model = {terra:{model:'gpt-6-sol',effort:'low',fast:true}};
   writeFileSync(join(source, 'jarvis/models.json'), JSON.stringify(model));
-  const run = (home, ...args) => spawnSync(process.execPath, [cli,...args,'--home',home,'--json'], {encoding:'utf8',timeout:20000});
+  const run = (home, ...args) => spawnSync(process.execPath, [cli,...args,'--home',home,'--assets-home',join(home,'jarvis'),'--json'], {encoding:'utf8',timeout:20000});
   const ok = result => { assert.equal(result.status,0,result.stderr); return JSON.parse(result.stdout); };
   assert.equal(ok(run(source,'employees','--init','--yes')).created.length,4);
   const bundle = join(root, 'bundle.gz');

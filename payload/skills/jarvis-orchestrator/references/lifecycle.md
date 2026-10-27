@@ -28,7 +28,7 @@ REVIEW means controller acceptance, not mandatory independent Reviewer work. Use
 
 ## Checkpoints and repair
 
-Light / Standard / Complex reassessment defaults are 10 / 20 / 30 minutes; scoped Standard exploration has a checkpoint around 10 minutes. Override these in the assignment when a known operation warrants it. They are decision points, not timers implemented by Codex, deadlines, or reasons to omit validation. Inspect state and ask once at a missed checkpoint, then record the evidence-based choice and next checkpoint. A continuation with no new evidence needs a changed investigation, narrower task, safe handoff, or concrete blocker.
+Light / Standard / Complex reassessment defaults are 10 / 20 / 30 minutes; scoped Standard exploration has a checkpoint around 10 minutes. Override these in the assignment when a known operation warrants it. They are decision points, not timers implemented by the client, deadlines, or reasons to omit validation. Inspect state and ask once at a missed checkpoint, then record the evidence-based choice and next checkpoint. A continuation with no new evidence needs a changed investigation, narrower task, safe handoff, or concrete blocker.
 
 Batch review findings. After one repair batch and targeted recheck, further review requires a stated material blocker, new critical evidence, or changed affected scope. Keep genuine blockers open. A worker's submission or successful command does not mark the parent DONE.
 

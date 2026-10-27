@@ -1,12 +1,18 @@
 # Runtime compatibility
 
+## Platforms in 0.2.0
+
+Open Jarvis provides separate native adapters for Codex, WorkBuddy, Claude Code and Cursor. Employee and experience assets can share one selected root on the same machine; models, effort, Fast, permissions and account integrations remain platform-specific. Rules and skill activation follow each client's supported surface, including explicit `/jarvis-orchestrator` activation for Cursor's global installation. See the [multi-platform guide and client validation matrix](multi-platform.md#020-client-validation-boundary). The Codex-specific configuration details below apply only to Codex.
+
+Static adapter tests establish generated configuration and installer behavior only. They do not establish that any client loaded a skill or role, honored a requested model, or ran a child agent. Native tool restrictions and filesystem read-only enforcement are separate guarantees; record effective runtime evidence for each.
+
 ## Package runners
 
-npx is the default consumer entrypoint; pnpm dlx is an optional runner for the same `open-jarvis` package and executable. Both require the package's Node.js 22+ runtime and use the same installation target (`--home`, `CODEX_HOME`, then the default Codex home). They do not create separate employee or asset stores.
+npx is the default consumer entrypoint; pnpm dlx is an optional runner for the same `open-jarvis` package and executable. Both require Node.js 22+ and use the same selected platform home and shared asset root. `--platform` selects the client, `--home` its native configuration root, and `--assets-home` or `JARVIS_HOME` the shared library; a saved platform binding is reused when no explicit root is supplied. Codex retains `CODEX_HOME` compatibility.
 
-Packages are distributed through [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases), not the npm registry. After the chosen release exists, use `npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install`, replacing both version occurrences with the chosen version. The equivalent pnpm prefix is `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis`.
+Packages are distributed through [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases), not the npm registry. After the chosen release exists, use `npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install`, replacing both version occurrences with the chosen version. The equivalent pnpm prefix is `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis`.
 
-If the chosen release asset is unavailable, use a reviewed local tarball: `npx --package ./open-jarvis-0.1.5.tgz open-jarvis install` or `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis install`. Replace `install` with `doctor`, `employees`, `plan`, `export`, `import` or `rollback` and keep that command's arguments. No global Jarvis installation is required. Package dependencies may still be downloaded from the npm registry; GitHub distribution is not an offline-install guarantee.
+If the chosen release asset is unavailable, use a reviewed local tarball: `npx --package ./open-jarvis-0.2.0.tgz open-jarvis install` or `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install`. Replace `install` with `doctor`, `employees`, `plan`, `export`, `import` or `rollback` and keep that command's arguments. No global Jarvis installation is required. Package dependencies may still be downloaded from the npm registry; GitHub distribution is not an offline-install guarantee.
 
 The pnpm compatibility target is 10.18.1. The CI matrix runs both package runners on Windows, macOS and Linux with Node 22 and 24; configured CI coverage is not a claim that those jobs have run. Observed results belong in [validation.md](validation.md). Repository dependency management remains npm with package-lock.json; pnpm is not a second build or publishing pipeline. Runner support does not prove Codex model access, live agent dispatch or effective runtime permissions.
 

@@ -43,7 +43,7 @@ function setupPlan(options) {
   return { ...options, employee: 'atlas-backend', difficulty: 'complex' };
 }
 function run(options, ...args) {
-  return spawnSync(process.execPath, [cli, ...args, '--home', options.home, '--project', options.project, '--json'], { encoding: 'utf8', timeout: 20000 });
+  return spawnSync(process.execPath, [cli, ...args, '--home', options.home, '--assets-home', join(options.home, 'jarvis'), '--project', options.project, '--json'], { encoding: 'utf8', timeout: 20000 });
 }
 
 test('proposals are unverified templates; approval preview is read-only and requires complete evidence', t => {
@@ -188,7 +188,7 @@ test('concurrent CLI updates allow one pinned revision and reject the competing 
     return approveExperience({ ...options, from, scope: 'project' });
   });
   const results = await Promise.all(candidates.map(preview => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [cli, 'experience', 'approve', '--home', options.home, '--project', options.project,
+    const child = spawn(process.execPath, [cli, 'experience', 'approve', '--home', options.home, '--assets-home', join(options.home, 'jarvis'), '--project', options.project,
       '--from', preview.source, '--scope', 'project', '--yes', '--source-sha256', preview.sourceSha256,
       '--expected-sha256', initial.sha256, '--json'], { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
@@ -274,7 +274,7 @@ test('CLI rejects wrong flags and performs preview/pinned apply with Markdown di
   assert.equal(existsSync(preview.destination), false);
   assert.equal(run(options, 'experience','approve','--from',ready.from,'--scope','project','--yes').status, 1);
   assert.equal(run(options, 'experience','approve','--from',ready.from,'--scope','project','--yes','--source-sha256',preview.sourceSha256).status, 0);
-  const plan = spawnSync(process.execPath, [cli, 'plan', '--home', options.home, '--project', options.project, '--employee', 'atlas-backend',
+  const plan = spawnSync(process.execPath, [cli, 'plan', '--home', options.home, '--assets-home', join(options.home, 'jarvis'), '--project', options.project, '--employee', 'atlas-backend',
     '--difficulty','complex','--experience','project:retry-safe','--format','markdown'], { encoding: 'utf8' });
   assert.equal(plan.status, 0, plan.stderr);
   assert.match(plan.stdout, /^# Jarvis task plan/); assert.match(plan.stdout, /Dispatched: false/);
