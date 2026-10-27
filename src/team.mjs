@@ -1,17 +1,18 @@
 import { existsSync, readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse as parseToml } from 'smol-toml';
 import { difficultyRoles, supportedEfforts } from './profiles.mjs';
 import { starterEmployees } from './starters.mjs';
 import { resolveExperience } from './experience.mjs';
+import { assetRoot } from './asset-root.mjs';
+import { platformAdapter, readExecutionProfile, checkNativeRoleCollisions } from './platforms/index.mjs';
 
 const safeId = value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(value);
-export function seedEmployees({ home, apply = false, starter = 'development' }) {
+export function seedEmployees({ home, assetsHome, apply = false, starter = 'development' }) {
   const ids = starterEmployees(starter);
   const source = fileURLToPath(new URL('../payload/employees/', import.meta.url));
   if (!ids.length) return { status: apply ? 'initialized' : 'preview', starter, created: [], candidates: [] };
-  const root = directory(join(home, 'jarvis/employees'));
+  const root = directory(join(assetRoot({ home, assetsHome }), 'employees'));
   let ancestor = root;
   while (!existsSync(ancestor)) ancestor = dirname(ancestor);
   if (!lstatSync(ancestor).isDirectory()) throw new Error('Employee root must be a directory.');
@@ -44,9 +45,8 @@ function directory(path) {
   }
   return path;
 }
-export function skillRoots(home, project) {
-  return [project && join(project, '.agents/skills'), project && join(project, '.codex/skills'),
-    join(home, 'skills'), join(dirname(home), '.agents/skills')].filter(Boolean);
+export function skillRoots(home, project, platform = 'codex') {
+  return platformAdapter(platform).skillRoots(home, project);
 }
 export function findSkill(id, roots) {
   if (!safeId(id)) throw new Error('Invalid skill identifier.');
@@ -56,9 +56,9 @@ export function findSkill(id, roots) {
   }
   return null;
 }
-export function listEmployees({ home, project, query = '' }) {
+export function listEmployees({ home, assetsHome, project, query = '' }) {
   const selected = new Map();
-  const roots = [[project && join(project, '.jarvis/employees'), 'project'], [join(home, 'jarvis/employees'), 'personal']];
+  const roots = [[project && join(project, '.jarvis/employees'), 'project'], [join(assetRoot({ home, assetsHome }), 'employees'), 'personal']];
   for (const [root, scope] of roots) {
     if (!root || !existsSync(directory(root))) continue;
     for (const file of readdirSync(root).sort()) {
@@ -89,29 +89,30 @@ export function listEmployees({ home, project, query = '' }) {
     `${card.id} ${card.name} ${card.profession} ${JSON.stringify(card.keywords)}`.toLowerCase().includes(term)));
 }
 
-export function planTask({ home, project, employee, difficulty, effort, risk = 'normal', skills = [], experiences = [] }) {
+export function planTask({ home, assetsHome, platform = 'codex', project, employee, difficulty, effort, risk = 'normal', skills = [], experiences = [] }) {
+  const adapter = platformAdapter(platform);
   if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: micro, light, simple, standard or complex. Direct work does not need a dispatch plan.');
   if (!['normal', 'critical'].includes(risk)) throw new Error('Choose risk: normal or critical.');
-  const card = listEmployees({ home, project }).find(c => c.id === employee);
+  const card = listEmployees({ home, assetsHome, project }).find(c => c.id === employee);
   if (!card) throw new Error('Employee not found; approve and save a card before planning.');
   const key = card.reviewer ? 'reviewer' : difficultyRoles[difficulty];
-  const rolePath = directory(join(home, `agents/jarvis_${key}.toml`));
-  if (!existsSync(rolePath)) throw new Error(`Execution profile is not installed: jarvis_${key}`);
-  let role;
-  try { role = parseToml(readFileSync(rolePath, 'utf8')); } catch { throw new Error('Invalid execution profile TOML.'); }
-  if (role.name !== `jarvis_${key}` || typeof role.model !== 'string' || !supportedEfforts(role.model).includes(role.model_reasoning_effort)) throw new Error('Invalid execution profile settings.');
-  if (effort !== undefined && !supportedEfforts(role.model).includes(effort)) throw new Error(`Selected model ${role.model} does not support Codex effort ${effort}.`);
-  if (card.reviewer && role.sandbox_mode !== 'read-only') throw new Error('Reviewer profile must request a read-only sandbox.');
-  const installed = { model: role.model, effort: role.model_reasoning_effort, speed: role.service_tier ?? 'inherit' };
-  const selectedSkills = skills.map(id => ({ id, path: findSkill(id, skillRoots(home, project)),
+  const rolePath = directory(join(home, adapter.rolePath(key)));
+  if (!existsSync(rolePath)) throw new Error(`Execution profile is not installed: ${adapter.roleName(key)}`);
+  checkNativeRoleCollisions(adapter, home);
+  const role = readExecutionProfile(adapter, home, key);
+  if (effort !== undefined && !(adapter.id === 'codex' ? supportedEfforts(role.model) : adapter.efforts).includes(effort)) throw new Error(`Selected model ${role.model} does not support ${adapter.id === 'codex' ? 'Codex' : adapter.id} effort ${effort}.`);
+  if (effort !== undefined && role.model === 'inherit') throw new Error('An effort override requires an explicit model.');
+  const installed = { model: role.model, effort: role.effort, speed: role.speed };
+  const selectedSkills = skills.map(id => ({ id, path: findSkill(id, skillRoots(home, project, adapter.id)),
     source: card.skills.some(skill => skill.id === id) ? 'employee-card' : 'task-override', loaded: false }));
   const blockers = selectedSkills.filter(s => !s.path).map(s => `Missing skill: ${s.id}`);
   const selectedExperience = [];
   for (const ref of experiences) {
-    try { selectedExperience.push(resolveExperience({ home, project }, ref)); }
+    try { selectedExperience.push(resolveExperience({ home, assetsHome, platform: adapter.id, project }, ref)); }
     catch (error) { blockers.push(error.message); }
   }
-  return { status: blockers.length ? 'blocked' : 'proposed', employee: card, difficulty, risk,
+  return { status: blockers.length ? 'blocked' : 'proposed', platform: adapter.id, assetsHome: assetRoot({ home, assetsHome }), capabilities: adapter.capabilities,
+    reviewerControl: role.reviewer, runtimeRequirements: ['Verify actual model, effort and speed in the client.', ...(card.reviewer ? ['Independently verify effective read-only controls; tool restrictions and permission modes are not a filesystem sandbox.'] : [])], employee: card, difficulty, risk,
     role: role.name, rolePath, installed, requested: { ...installed, effort: effort ?? installed.effort },
     ...(effort !== undefined && effort !== installed.effort ? {
       compatibilityBindingRequired: true,

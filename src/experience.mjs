@@ -2,6 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { closeSync, existsSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { checkAncestors } from './asset-paths.mjs';
+import { assetRoot } from './asset-root.mjs';
+import { platformAdapter } from './platforms/index.mjs';
 
 const digest = data => createHash('sha256').update(data).digest('hex');
 const validId = value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(value) && !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(value);
@@ -16,16 +18,16 @@ function absolute(value, label) {
   checkAncestors(path);
   return path;
 }
-function scopeRoot({ home, project }, scope) {
+function scopeRoot(options, scope) {
   if (!['project', 'personal'].includes(scope)) fail('Experience scope must be project or personal.');
-  const base = absolute(scope === 'project' ? project : home, scope === 'project' ? 'project' : 'home');
-  return { base, prefix: scope === 'project' ? '.jarvis' : 'jarvis', scope };
+  const base = absolute(scope === 'project' ? options.project : assetRoot(options), scope === 'project' ? 'project' : 'assetsHome');
+  return { base, prefix: scope === 'project' ? '.jarvis' : '', scope };
 }
 function recordPath(options, scope, id) {
   if (!validId(id)) fail('Invalid experience ID.');
   const root = scopeRoot(options, scope);
-  const relativePath = `${root.prefix}/knowledge/experience/${id}.md`;
-  const path = absolute(join(root.base, ...relativePath.split('/')), 'experience path');
+  const relativePath = `${scope === 'project' ? '.jarvis' : 'jarvis'}/knowledge/experience/${id}.md`;
+  const path = absolute(join(root.base, root.prefix, 'knowledge/experience', `${id}.md`), 'experience path');
   return { ...root, id, path, relativePath };
 }
 function within(path, root) {
@@ -35,7 +37,7 @@ function within(path, root) {
 function candidatePath(options, from) {
   const path = absolute(from, 'candidate');
   if (!path.endsWith('.md')) fail('Experience candidate must be a Markdown file.');
-  for (const [base, prefix] of [[options.home, 'jarvis'], [options.project, '.jarvis']]) {
+  for (const [base, prefix] of [[assetRoot(options), ''], [options.project, '.jarvis']]) {
     if (!base) continue;
     const root = absolute(base, 'asset root');
     for (const kind of ['employees', 'knowledge', 'resources']) {
@@ -45,8 +47,7 @@ function candidatePath(options, from) {
     if (within(path, join(root, 'skills')) || within(path, join(root, '.agents/skills')) || within(path, join(root, '.codex/skills')))
       fail('Experience candidates must stay outside curated skill roots.');
   }
-  if (options.home && within(path, join(dirname(resolve(options.home)), '.agents/skills')))
-    fail('Experience candidates must stay outside curated skill roots.');
+  if (options.home && platformAdapter(options.platform).skillRoots(options.home, options.project).some(root => within(path, root))) fail('Experience candidates must stay outside curated skill roots.');
   return path;
 }
 function readRegular(path) {
@@ -155,7 +156,7 @@ function recordSnapshot(record, data, expectedSha256, active = false) {
   return { ...record, metadata, body, text, sha256 };
 }
 function reference(record) {
-  return { id: record.id, scope: record.scope, relativePath: record.relativePath, title: record.metadata.title, heading: 'Method',
+  return { id: record.id, scope: record.scope, path: record.path, relativePath: record.relativePath, title: record.metadata.title, heading: 'Method',
     sha256: record.sha256, ref: `${record.scope}:${record.id}@${record.sha256}` };
 }
 export function resolveExperience(options, ref) { return reference(readRecord(options, ref, true)); }

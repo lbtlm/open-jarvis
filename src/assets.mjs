@@ -3,6 +3,9 @@ import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, re
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { checkAncestors } from './asset-paths.mjs';
+import { assetRoot } from './asset-root.mjs';
+import { skillRoots as installedSkillRoots } from './team.mjs';
+import { platformAdapter } from './platforms/index.mjs';
 
 // Stable archive format, shared with assets exported before the Open Jarvis rename.
 const FORMAT = 'codex-jarvis-assets';
@@ -119,8 +122,10 @@ function pathIndex() {
   };
 }
 
-export function exportAssets({ home, out, project, skillRoots, models: portableModels } = {}) {
+export function exportAssets({ home, assetsHome, platform = 'codex', out, project, skillRoots, models: portableModels } = {}) {
   home = absolute(home, 'home');
+  const library = assetRoot({ home, assetsHome });
+  const adapter = platformAdapter(platform);
   out = absolute(out, 'out');
   if (project !== undefined) project = absolute(project, 'project');
   checkAncestors(home);
@@ -154,12 +159,12 @@ export function exportAssets({ home, out, project, skillRoots, models: portableM
       }
     } else fail(`Unsupported asset file type: ${source}`);
   }
-  for (const [scope, root, prefix] of [['home', home, 'jarvis'], ...(project ? [['project', project, '.jarvis']] : [])]) {
-    for (const kind of ['employees', 'knowledge']) walk(join(root, prefix, kind), scope, `${prefix}/${kind}`, true);
-    walk(join(root, prefix, 'resources'), scope, `${prefix}/resources`);
-    walk(join(root, prefix, 'preferences.md'), scope, `${prefix}/preferences.md`);
+  for (const [scope, root, prefix, physical] of [['home', library, 'jarvis', ''], ...(project ? [['project', project, '.jarvis', '.jarvis']] : [])]) {
+    for (const kind of ['employees', 'knowledge']) walk(join(root, physical, kind), scope, `${prefix}/${kind}`, true);
+    walk(join(root, physical, 'resources'), scope, `${prefix}/resources`);
+    walk(join(root, physical, 'preferences.md'), scope, `${prefix}/preferences.md`);
   }
-  const registryPath = join(home, 'jarvis', 'skills.json');
+  const registryPath = join(library, 'skills.json');
   checkAncestors(registryPath);
   if (existsSync(registryPath)) {
     if (lstatSync(registryPath).size > LIMITS.file) fail('Skills registry exceeds size limit.');
@@ -168,10 +173,7 @@ export function exportAssets({ home, out, project, skillRoots, models: portableM
     add('home', 'jarvis/skills.json', data);
   }
   if (skillRoots !== undefined && !Array.isArray(skillRoots)) fail('skillRoots must be an array.');
-  const roots = (skillRoots ?? [
-    ...(project ? [join(project, '.agents', 'skills'), join(project, '.codex', 'skills')] : []),
-    join(home, 'skills'), join(dirname(home), '.agents', 'skills'),
-  ]).map(root => absolute(root, 'skillRoots entry'));
+  const roots = (skillRoots ?? installedSkillRoots(home, project, adapter.id)).map(root => absolute(root, 'skillRoots entry'));
   function locate(id) {
     for (const root of roots) {
       const candidate = join(root, id);
@@ -193,7 +195,7 @@ export function exportAssets({ home, out, project, skillRoots, models: portableM
   }
   if (portableModels !== undefined) add('home', 'jarvis/models.json', Buffer.from(`${JSON.stringify(models(portableModels), null, 2)}\n`));
   else {
-    const savedModels = join(home, 'jarvis', 'models.json');
+    const savedModels = join(library, adapter.id === 'codex' ? 'models.json' : `models.${adapter.id}.json`);
     checkAncestors(savedModels);
     if (existsSync(savedModels)) {
       const info = lstatSync(savedModels);
@@ -203,7 +205,7 @@ export function exportAssets({ home, out, project, skillRoots, models: portableM
       add('home', 'jarvis/models.json', data);
     }
   }
-  const archive = { format: FORMAT, version: 1, files, missingSkills };
+  const archive = { format: FORMAT, version: adapter.id === 'codex' ? 1 : 2, ...(adapter.id === 'codex' ? {} : { platform: adapter.id }), files, missingSkills };
   const json = Buffer.from(JSON.stringify(archive));
   if (json.length > LIMITS.json) fail('Archive JSON exceeds size limit.');
   const compressed = gzipSync(json);
@@ -212,11 +214,13 @@ export function exportAssets({ home, out, project, skillRoots, models: portableM
   try { fd = openSync(out, 'wx'); writeFileSync(fd, compressed); }
   catch (error) { if (fd !== undefined) { closeSync(fd); fd = undefined; unlinkSync(out); } throw error; }
   finally { if (fd !== undefined) closeSync(fd); }
-  return { status: 'exported', archive: out, sha256: hash(compressed), fileCount: files.length, counts: counts(files), missingSkills, bytes: total, compressedBytes: compressed.length, portability: { ...PORTABILITY } };
+  return { status: 'exported', platform: adapter.id, assetsHome: library, archive: out, sha256: hash(compressed), fileCount: files.length, counts: counts(files), missingSkills, bytes: total, compressedBytes: compressed.length, portability: { ...PORTABILITY } };
 }
 
-export function importAssets({ home, from, project, apply = false } = {}) {
+export function importAssets({ home, assetsHome, platform = 'codex', from, project, apply = false } = {}) {
   home = absolute(home, 'home');
+  const library = assetRoot({ home, assetsHome });
+  const adapter = platformAdapter(platform);
   from = absolute(from, 'from');
   if (project !== undefined) project = absolute(project, 'project');
   if (typeof apply !== 'boolean') fail('apply must be a boolean.');
@@ -228,7 +232,9 @@ export function importAssets({ home, from, project, apply = false } = {}) {
   try { json = gunzipSync(compressed, { maxOutputLength: LIMITS.json }); }
   catch { fail('Invalid gzip archive or decompressed size limit exceeded.'); }
   const archive = parseJson(json, 'archive');
-  if (!object(archive) || archive.format !== FORMAT || archive.version !== 1 || !Array.isArray(archive.files) || !Array.isArray(archive.missingSkills) || Object.keys(archive).some(key => !['format', 'version', 'files', 'missingSkills'].includes(key))) fail('Invalid asset archive schema.');
+  if (!object(archive) || archive.format !== FORMAT || ![1, 2].includes(archive.version) || !Array.isArray(archive.files) || !Array.isArray(archive.missingSkills) || Object.keys(archive).some(key => !['format', 'version', 'files', 'missingSkills', ...(archive.version === 2 ? ['platform'] : [])].includes(key))) fail('Invalid asset archive schema.');
+  if (archive.version === 2 && typeof archive.platform !== 'string') fail('Asset archive must identify its source platform.');
+  const sourcePlatform = archive.version === 1 ? 'codex' : platformAdapter(archive.platform).id;
   if (archive.files.length > LIMITS.files) fail('Archive file-count limit exceeded.');
   const declaredMissing = archive.missingSkills.map(skillId);
   if (new Set(declaredMissing).size !== declaredMissing.length) fail('Archive contains duplicate missing skill IDs.');
@@ -252,10 +258,14 @@ export function importAssets({ home, from, project, apply = false } = {}) {
       if (file.path === `skills/${id}/SKILL.md`) skillEntries.add(id);
     }
     if (file.scope === 'project' && !project) fail('Archive includes project assets; supply project to map their destination.');
-    const destination = join(file.scope === 'home' ? home : project, ...file.path.split('/'));
+    const shared = file.scope === 'home' && file.path.startsWith('jarvis/');
+    const root = shared ? library : file.scope === 'home' ? home : project;
+    let path = shared ? file.path.slice('jarvis/'.length) : file.path;
+    if (shared && path === 'models.json' && sourcePlatform !== 'codex') path = `models.${sourcePlatform}.json`;
+    const destination = join(root, ...path.split('/'));
     addDestination('destination', destination.replaceAll('\\', '/'));
     checkAncestors(destination);
-    entries.push({ file, data, destination, skip: false });
+    entries.push({ file, data, destination, root, skip: false });
   }
   for (const id of includedSkills) {
     if (!skillEntries.has(id)) fail(`Archive skill is missing SKILL.md: ${id}`);
@@ -266,7 +276,7 @@ export function importAssets({ home, from, project, apply = false } = {}) {
   for (const entry of entries) {
     let reason;
     const chain = [];
-    const root = entry.file.scope === 'home' ? home : project;
+    const root = entry.root;
     for (let current = entry.destination; ; current = dirname(current)) {
       chain.push(current);
       if (current === root) break;
@@ -286,7 +296,7 @@ export function importAssets({ home, from, project, apply = false } = {}) {
     }
     if (reason) conflicts.push({ scope: entry.file.scope, path: entry.file.path, reason });
   }
-  const summary = { status: conflicts.length ? 'conflicts' : apply ? 'imported' : 'preview', fileCount: entries.length, counts: counts(archive.files), missingSkills, conflicts, plannedCount: entries.filter(entry => !entry.skip).length, writtenCount: 0, skippedCount: entries.filter(entry => entry.skip).length, sha256: hash(compressed), bytes: total, portability: { ...PORTABILITY } };
+  const summary = { status: conflicts.length ? 'conflicts' : apply ? 'imported' : 'preview', platform: adapter.id, sourcePlatform, assetsHome: library, modelPreferencesApplied: false, fileCount: entries.length, counts: counts(archive.files), missingSkills, conflicts, plannedCount: entries.filter(entry => !entry.skip).length, writtenCount: 0, skippedCount: entries.filter(entry => entry.skip).length, sha256: hash(compressed), bytes: total, portability: { ...PORTABILITY } };
   if (conflicts.length || !apply) return summary;
   const createdFiles = [], createdDirectories = [];
   function ensureDirectory(path) {

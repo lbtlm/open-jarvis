@@ -1,7 +1,7 @@
 {
   "name": "open-jarvis",
-  "version": "0.1.7",
-  "description": "Install supervised multi-model Jarvis workflows for Codex desktop and CLI.",
+  "version": "0.2.0",
+  "description": "Install Jarvis workflows for Codex, WorkBuddy, Claude Code and Cursor with shared employee and experience assets.",
   "type": "module",
   "bin": { "open-jarvis": "bin/open-jarvis.mjs" },
   "engines": { "node": ">=22" },
@@ -9,15 +9,15 @@
   "repository": { "type": "git", "url": "git+https://github.com/lbtlm/open-jarvis.git" },
   "homepage": "https://github.com/lbtlm/open-jarvis#readme",
   "bugs": { "url": "https://github.com/lbtlm/open-jarvis/issues" },
-  "keywords": ["codex", "jarvis", "agents", "orchestration", "cli"],
+  "keywords": ["codex", "workbuddy", "claude-code", "cursor", "jarvis", "agents", "orchestration", "cli"],
   "files": ["bin/", "src/", "payload/", "docs/", "README.en.md", "README.zh-CN.md", "README.ja.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
   "scripts": {
     "test": "node --test",
     "test:package": "node scripts/smoke-package.mjs",
     "test:package:pnpm": "node scripts/smoke-package.mjs --pnpm",
     "test:runtime": "node scripts/check-runtime.mjs",
-    "check": "node --check bin/open-jarvis.mjs && node --check src/installer.mjs && node --check src/wizard.mjs && node --check src/profiles.mjs && node --check src/team.mjs && node --check src/assets.mjs && node --check src/asset-paths.mjs && node --check src/experience.mjs && node --check src/qmd.mjs",
+    "check": "node --check bin/open-jarvis.mjs && node --check src/installer.mjs && node --check src/wizard.mjs && node --check src/profiles.mjs && node --check src/team.mjs && node --check src/assets.mjs && node --check src/asset-paths.mjs && node --check src/experience.mjs && node --check src/qmd.mjs && node --check src/asset-root.mjs && node --check src/platforms/index.mjs && node --check src/platforms/codex.mjs",
     "prepack": "npm run check && npm test"
   },
-  "dependencies": { "smol-toml": "1.8.0" }
+  "dependencies": { "smol-toml": "1.9.1" }
 }

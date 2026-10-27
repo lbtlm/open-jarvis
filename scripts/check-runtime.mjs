@@ -21,9 +21,9 @@ let child;
 let stream;
 const pending = new Map();
 try {
-  install({ home, ...(values.fast ? { models: { controller: { fast: values.fast === 'on' } } } : {}) });
+  install({ home, assetsHome: join(home, 'jarvis'), ...(values.fast ? { models: { controller: { fast: values.fast === 'on' } } } : {}) });
   child = spawn(executable, ['app-server', '--stdio'], {
-    cwd: scratch, env: { ...process.env, CODEX_HOME: home },
+    cwd: scratch, env: { ...process.env, CODEX_HOME: home, JARVIS_HOME: join(home, 'jarvis') },
     stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true,
   });
   const rejectAll = error => {
