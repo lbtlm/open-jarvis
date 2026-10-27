@@ -15,14 +15,37 @@ function fixture(t) {
   return path;
 }
 function run(home, ...args) {
+  const homeIndex = args.lastIndexOf('--home');
+  const targetHome = homeIndex < 0 ? home : args[homeIndex + 1];
   return spawnSync(process.execPath, [cli, ...args], {
-    env: { ...process.env, CODEX_HOME: home }, encoding: 'utf8', timeout: 20000,
+    env: { ...process.env, CODEX_HOME: home, JARVIS_HOME: join(targetHome, 'jarvis') }, encoding: 'utf8', timeout: 20000,
   });
 }
 function json(result) {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
 }
+
+test('CLI fixture homes keep independent assets despite an inherited personal library', t => {
+  const root = fixture(t), unrelated = join(root, 'personal-library');
+  mkdirSync(unrelated);
+  writeFileSync(join(unrelated, 'preferences.md'), 'Preserve this unrelated personal library.');
+  const original = process.env.JARVIS_HOME;
+  try {
+    process.env.JARVIS_HOME = unrelated;
+    const first = join(root, 'first'), second = join(root, 'second'), untouched = join(root, 'unused-env-home');
+    json(run(first, 'install', '--yes', '--starter', 'writing', '--json'));
+    json(run(untouched, 'install', '--home', second, '--yes', '--starter', 'video', '--json'));
+    assert.deepEqual(readdirSync(join(first, 'jarvis/employees')), ['nova-writer.md']);
+    assert.deepEqual(readdirSync(join(second, 'jarvis/employees')), ['frame-video.md']);
+    assert.equal(existsSync(untouched), false);
+    assert.deepEqual(readdirSync(unrelated), ['preferences.md']);
+    assert.equal(readFileSync(join(unrelated, 'preferences.md'), 'utf8'), 'Preserve this unrelated personal library.');
+  } finally {
+    if (original === undefined) delete process.env.JARVIS_HOME;
+    else process.env.JARVIS_HOME = original;
+  }
+});
 
 test('plan-only effort overrides distinguish installed settings and leave configuration untouched', t => {
   const home = fixture(t);
@@ -208,13 +231,13 @@ test('install and employees init select starters and rollback retains user-owned
 
 test('interactive starter prefill applies only after final confirmation', t => {
   const home = join(fixture(t), 'accepted');
-  const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'video', '--home', home], {
+  const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'video', '--home', home, '--assets-home', join(home, 'jarvis')], {
     input: '\n'.repeat(20) + 'yes\n', encoding: 'utf8', timeout: 20000,
   });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(readdirSync(join(home, 'jarvis', 'employees')), ['frame-video.md']);
   const cancelled = join(fixture(t), 'cancelled');
-  const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'writing', '--home', cancelled], {
+  const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--starter', 'writing', '--home', cancelled, '--assets-home', join(cancelled, 'jarvis')], {
     input: '\n'.repeat(21), encoding: 'utf8', timeout: 20000,
   });
   assert.equal(cancel.status, 0, cancel.stderr);
@@ -242,7 +265,7 @@ fs.writeFileSync = function(path, ...args) {
 };
 require('node:module').syncBuiltinESMExports();
 `);
-  const result = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--starter', 'development', '--home', home, '--json'], {
+  const result = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--starter', 'development', '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], {
     encoding: 'utf8', timeout: 20000,
   });
   assert.equal(result.status, 1, result.stderr);
@@ -252,7 +275,7 @@ require('node:module').syncBuiltinESMExports();
   assert.equal(existsSync(partial.manifest), true);
   assert.equal(existsSync(join(home, 'config.toml')), true);
   assert.deepEqual(readdirSync(join(home, 'jarvis', 'employees')), []);
-  const repeat = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--starter', 'development', '--home', home, '--json'], {
+  const repeat = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--starter', 'development', '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], {
     encoding: 'utf8', timeout: 20000,
   });
   assert.equal(repeat.status, 1, repeat.stderr);
@@ -371,7 +394,7 @@ test('wizard choices reach controller and role TOML; cancellation and EOF do not
     '', '', 'n',
     '', '', 'y',
   ].join('\n') + '\n';
-  const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', home], {
+  const result = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', home, '--assets-home', join(home, 'jarvis')], {
     input: answers, encoding: 'utf8', timeout: 20000,
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -386,12 +409,12 @@ test('wizard choices reach controller and role TOML; cancellation and EOF do not
   assert.equal(sol.service_tier, 'fast');
   assert.equal(sol.features.fast_mode, true);
   const cancelled = join(root, 'cancelled');
-  const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', cancelled], {
+  const cancel = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', cancelled, '--assets-home', join(cancelled, 'jarvis')], {
     input: '\n'.repeat(21), encoding: 'utf8', timeout: 20000,
   });
   assert.equal(cancel.status, 0, cancel.stderr);
   assert.equal(existsSync(cancelled), false);
-  const eof = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', cancelled], {
+  const eof = spawnSync(process.execPath, [cli, 'install', '--interactive', '--home', cancelled, '--assets-home', join(cancelled, 'jarvis')], {
     input: '', encoding: 'utf8', timeout: 20000,
   });
   assert.equal(eof.status, 1);

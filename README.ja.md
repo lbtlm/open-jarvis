@@ -13,7 +13,9 @@
   <a href="https://github.com/lbtlm/open-jarvis/releases"><img src="https://img.shields.io/badge/download-GitHub_Releases-24292f" alt="GitHub Releases"></a>
 </p>
 
-Open Jarvis は **Codex Desktop と CLI** に統括エージェントが監督する協働の手順を提供します。開発、執筆、事務、動画の作業で、受け入れ条件を定め、適任のスタッフを選び、実行を確認し、承認を得て成果を再利用できます。
+Open Jarvis は **Codex、WorkBuddy、Claude Code、Cursor** に統括エージェントが監督する協働の手順を提供します。開発、執筆、事務、動画の作業で、受け入れ条件を定め、適任のスタッフを選び、実行を確認し、承認を得て成果を再利用できます。
+
+**0.2.0 の新機能：** 各クライアントに独立して導入し、同じマシン上のスタッフ・経験資産を共有できます。モデルと権限は各クライアントで個別に管理します。コマンドと検証範囲は[マルチプラットフォームガイド（英語）](docs/multi-platform.md)を参照してください。アプリ間のタスク割り当ては行いません。
 
 [クイックスタート](#quick-start) · [主な機能](#capabilities) · [作業の流れ](#workflow) · [スタッフと設定](#employees-and-settings) · [コマンド](#commands) · [再利用資産](#assets) · [FAQ](#faq) · [検証状況](#verification) · [貢献](#contributing)
 
@@ -21,35 +23,35 @@ Open Jarvis は **Codex Desktop と CLI** に統括エージェントが監督�
 
 ## クイックスタート
 
-**Node.js 22+**（npm/npx を含む）と、独立したサブエージェントのロール設定に対応するログイン済みの Codex が必要です。Desktop と CLI が同じ Codex home を使う場合、インストールは 1 回で十分です。
+**Node.js 22+**（npm/npx を含む）と、[マルチプラットフォームガイド（英語）](docs/multi-platform.md)のネイティブ設定に対応するクライアントが必要です。モデルの実行には、そのクライアントのログインと利用権限が必要です。既定は Codex で、ほかのクライアントは `--platform workbuddy`、`--platform claude-code`、`--platform cursor` を指定します。
 
-[GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) から公開済みのバージョンを選んでください。以下は **0.1.5** の例で、ダウンロード URL は公開後に利用できます。別のバージョンでは、番号、URL、ファイル名を合わせて変更します。該当する成果物が利用できない場合は、下記の確認済みローカルパッケージを使ってください。
+[GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) から公開済みのバージョンを選んでください。以下は **0.2.0** の例で、ダウンロード URL は公開後に利用できます。別のバージョンでは、番号、URL、ファイル名を合わせて変更します。該当する成果物が利用できない場合は、下記の確認済みローカルパッケージを使ってください。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install
 ```
 
-**ターミナルのウィザードで設定を選びます：** 統括と実行ロールのモデル、推論の強度、Fast、スタッフのテンプレート。既定のテンプレートは `none` なので、協働ルールから始めて必要なスタッフを追加できます。既存の設定を優先し、新規導入の統括には Astra / High を推奨します。Fast は別に選び、既定ではオフです。Ultra の自動有効化や Sol への自動切り替えは行いません。
+**Codex のターミナルウィザードで設定を選びます：** 統括と実行ロールのモデル、推論の強度、Fast、スタッフのテンプレート。既定のテンプレートは `none` なので、協働ルールから始めて必要なスタッフを追加できます。既存の設定を優先し、新規導入の統括には Astra / High を推奨します。Fast は別に選び、既定ではオフです。Ultra の自動有効化や Sol への自動切り替えは行いません。
 
 <details>
 <summary>pnpm の代替手順と確認済みローカルパッケージ</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
 確認済みのパッケージを現在のディレクトリに置き、どちらかの実行方法を使います。
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
-両方とも同じ Codex home、スタッフ、資産を使います。パッケージは GitHub Releases で配布し、**npm registry には公開していません**。依存関係は npm から取得する場合があり、完全なオフライン導入は保証しません。導入先は `--home`、`CODEX_HOME`、`~/.codex` の順で決まります。`--yes` は対話なしで導入し、既存の設定を維持します。pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性（英語）](docs/compatibility.md)を参照してください。
+両方とも選択したプラットフォームのネイティブ home と共有資産ルートを使います。パッケージは GitHub Releases で配布し、**npm registry には公開していません**。依存関係は npm から取得する場合があり、完全なオフライン導入は保証しません。`--home` はプラットフォームのネイティブ設定先を選びます。Codex では `CODEX_HOME` と `~/.codex` の既定値を維持します。共有資産は `--assets-home`、`JARVIS_HOME`、保存済みの設定に従います。[選択規則（英語）](docs/multi-platform.md#choose-the-asset-root)を参照してください。`--yes` は対話なしで導入し、既存の設定を維持します。pnpm **10.18.1** は Windows 上でローカル検証済みです。[互換性（英語）](docs/compatibility.md)を参照してください。
 
 </details>
 
-導入後、新しい Codex タスクで、例えば次のように依頼します。
+導入後、そのクライアントで新しいタスクを開き、例えば次のように依頼します（Cursor では `/jarvis-orchestrator` を明示的に呼び出します）。
 
 > Jarvis の手順でこの作業を進めてください。統括が受け入れ条件を定め、能力に合うスタッフを選び、実行を監督して最終確認してください。実際のエージェント ID と実行時設定の証拠も記録してください。
 
@@ -99,6 +101,8 @@ flowchart TD
 適任者がいなければ、統括が責務・スキル・設定を示して臨時スタッフを提案し、ユーザーの承認後に割り当てます。
 無関係なスタッフに無理に任せたり、名前を変えて専門性があるように扱ったりしません。
 
+以下は **Codex の推奨設定**です。WorkBuddy、Claude Code、Cursor の実行プロファイルは既定で `inherit` となり、統括モデルはクライアントで選びます。[ネイティブモデル設定（英語）](docs/multi-platform.md#native-adapters-and-official-references)を参照してください。
+
 | 実行プロファイル | 推奨モデル / 推論の強度 | 適した作業 |
 | --- | --- | --- |
 | `controller`（統括） | GPT-6 Astra / High | 調整、監督、最終確認 |
@@ -115,7 +119,7 @@ Fast はモデルや推論の強度とは別に選びます。モデルの利用
 実行担当は再帰的に委派しません。独立レビューは明示されたリスクや証拠に応じて行い、全タスクで必須ではありません。
 必要なモデル、Fast、Reviewer の読み取り専用権限を維持できない場合、その割り当てが実行できないことを報告します。
 
-**0.1.5 の計画オプション：** このリリースの公開後、`plan --employee atlas-backend --difficulty micro` は既存の `luna` プロファイルに対応し、導入済み設定を継承します。明示的な `--effort low` は今回だけ推論の強度を上書きする例で、選択モデルに対する有効性を確認します。micro は強度を自動的に下げず、全体設定やスタッフの身元も変更しません。導入済みプロファイルと強度が異なる場合は、実行時に明示的に設定する必要があります。プレビューはネイティブロールの設定変更を証明しません。`atlas-backend` は既存の適任スタッフ ID に置き換えてください。[振り分け（英語）](docs/routing.md)を参照してください。
+**計画オプション：** `plan --employee atlas-backend --difficulty micro` は既存の `luna` プロファイルに対応し、導入済み設定を継承します。明示的な `--effort low` は今回だけ推論の強度を上書きする例で、選択モデルに対する有効性を確認します。micro は強度を自動的に下げず、全体設定やスタッフの身元も変更しません。導入済みプロファイルと強度が異なる場合は、実行時に明示的に設定する必要があります。プレビューはネイティブロールの設定変更を証明しません。`atlas-backend` は既存の適任スタッフ ID に置き換えてください。[振り分け（英語）](docs/routing.md)を参照してください。
 
 <details>
 <summary>スタッフのテンプレートとスキル計画</summary>
@@ -133,9 +137,9 @@ Fast はモデルや推論の強度とは別に選びます。モデルの利用
 例えば、執筆の候補カードを確認してから明示的に書き込みます。
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` は例示用のスキル ID です。実在するスキルに置き換えてください。不足している場合、計画は実行不可として報告されます。
@@ -154,10 +158,10 @@ Jarvis の導入は全スキルの一括導入ではなく、Office、編集、�
 以下は**コマンドの末尾部分**で、単独では実行できません。次の完全な実行プレフィックスに追加してください。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis
 ```
 
-どの末尾部分も、`pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis` に追加できます。確認済みローカルパッケージでは、`npx --package ./open-jarvis-0.1.5.tgz open-jarvis` または `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis` を使い、末尾部分はそのままにします。
+どの末尾部分も、`pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis` に追加できます。確認済みローカルパッケージでは、`npx --package ./open-jarvis-0.2.0.tgz open-jarvis` または `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis` を使い、末尾部分はそのままにします。
 
 | コマンドの末尾部分 | 用途 |
 | --- | --- |
@@ -173,12 +177,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 例えば、静的な検査は次のように実行します。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` は例示用のパスです。実際のインストールマニフェストに置き換えてください。
-`--home PATH` は Codex home、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
-全オプションは `npx --package ./open-jarvis-0.1.5.tgz open-jarvis --help` で確認できます。
+`--platform codex|workbuddy|claude-code|cursor` はアダプター、`--home PATH` はネイティブ設定先、`--assets-home PATH` は共有個人資産先、`--project PATH` はプロジェクト資産を明示的に選び、`--json` は機械可読の結果を出力します。
+全オプションは `npx --package ./open-jarvis-0.2.0.tgz open-jarvis --help` で確認できます。
 `audit` と `doctor` はモデルへのリクエストを行わず、スタッフが実行されたことも証明しません。
 
 <a id="assets"></a>
@@ -190,12 +194,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 タスクや臨時採用の承認は、恒久保存の承認ではありません。モデル学習や長期指示の自動書き換えも行いません。
 毎回の採点、振り返り、統計は必須ではありません。[資産の改善手順（中国語）](docs/asset-evolution.md)を参照してください。
 
-**Markdown の経験記録：** Markdown の経験記録では、タスク内の候補と承認済みの `knowledge/experience/` を分け、保存前に具体的な内容を確認し、計画には現在の原文への参照を選びます。個人・プロジェクトの範囲と基本的な Unicode 検索に対応します。別途導入した任意の QMD と連携し、対象範囲を限定してスタッフ・スキル・経験を検索できます。必要に応じて埋め込みモデルによる意味検索を使い、利用できない場合はローカルファイル検索に戻ります。スタッフカードは本文を複製せず、正本の経験記録にリンクします。手順と公開後に利用できる 0.1.5 の例は [Markdown の経験記録（英語）](docs/experience.md)を参照してください。
+**Markdown の経験記録：** Markdown の経験記録では、タスク内の候補と承認済みの `knowledge/experience/` を分け、保存前に具体的な内容を確認し、計画には現在の原文への参照を選びます。個人・プロジェクトの範囲と基本的な Unicode 検索に対応します。別途導入した任意の QMD と連携し、対象範囲を限定してスタッフ・スキル・経験を検索できます。必要に応じて埋め込みモデルによる意味検索を使い、利用できない場合はローカルファイル検索に戻ります。スタッフカードは本文を複製せず、正本の経験記録にリンクします。手順と例は [Markdown の経験記録（英語）](docs/experience.md)を参照してください。
 
-**任意の QMD 導入：** 既定の `install` は QMD をダウンロードせず、既存の QMD 環境と接続を維持します。対話ウィザードでは QMD の導入を選び、npm または pnpm、導入先、`auto` または `cpu` を指定できます。最終確認の後にパッケージマネージャーを実行します。0.1.5 の公開後、非対話での導入には次のコマンドを使います。
+**任意の QMD 導入：** 既定の `install` は QMD をダウンロードせず、既存の QMD 環境と接続を維持します。対話ウィザードでは QMD の導入を選び、npm または pnpm、導入先、`auto` または `cpu` を指定できます。最終確認の後にパッケージマネージャーを実行します。Codex の非対話での導入には次のコマンドを使います。
 
 ```sh
-npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 実際のパッケージと絶対パスの導入先に置き換えてください。`--qmd-manager pnpm` も使えます。導入するのはエンジンとプラットフォーム用の native パッケージです。モデルのダウンロード、索引の作成、ドライバーや完全な CUDA Toolkit の導入は行いません。意味検索にはモデルと承認済み資産の索引が必要です。GPU 検出と CPU へのフォールバックは QMD に従います。パッケージが存在しても CUDA の動作確認にはならず、Windows では任意の cuBLAS ランタイムが必要な場合があります。QMD の失敗は部分的な導入として報告し、Jarvis の導入結果は残る場合があります。[QMD の説明（英語）](docs/experience.md)を参照してください。
@@ -203,22 +207,22 @@ npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 <details>
 <summary>移行コマンド・パス・上限</summary>
 
-個人資産は Codex home の `jarvis/`、プロジェクト資産は `.jarvis/` に保存します。
+個人資産は選択した共有ルート（新規の既定は `~/.jarvis`）に保存します。既存の Codex `<home>/jarvis` は移動せず利用できます。プロジェクト資産は `.jarvis/` に保存し、各クライアントで同じ `--assets-home` を選びます。
 エクスポートにはスタッフ、知識、好み、resources、選択したスキルのディレクトリ、モデル設定を含みます。
-`jarvis/skills.json` で補助スキルの依存関係を明示登録します。全スキルやプラグインの走査、本文からの全依存関係の推測は行いません。
-既定のスキル探索先は、プロジェクトの `.agents/skills`、`.codex/skills`、home の `skills`、home と同階層の `.agents/skills` の順です。
+`<assets-home>/skills.json` で補助スキルの依存関係を明示登録します。全スキルやプラグインの走査、本文からの全依存関係の推測は行いません。
+スキルは選択したプラットフォームのプロジェクト用ディレクトリ、プロジェクトの `.agents/skills`、ネイティブ home の `skills`、ユーザーの `.agents/skills` から探します。Codex は `.codex/skills` も維持します。
 `--skill-root PATH` を複数指定すると、既定のエクスポート探索先の一覧を完全に置き換えます。
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
 ```
 
 プロジェクト資産は、移行元のエクスポートと移行先のインポートの両方で `--project` を明示し、それぞれのプロジェクトパスを指定します。
 インポートはまずプレビューし、`--yes` で書き込みます。同一内容はスキップし、内容差分が 1 件でもあれば全体を停止します。上書きやスクリプト実行は行いません。
-最後のコマンドのパスは置き換えてください。モデル設定を確認してから明示的にインストールで有効化します。インポートだけでは統括は変わりません。
+最後の Codex の例のパスは置き換えてください。インポートは選択した共有資産先に書き込み、Codex 以外を移行元とするモデル設定は `models.<source-platform>.json`、Codex は `models.json` を使います。確認後、対象プラットフォームの導入で明示的に有効化します。インポートだけではモデル設定の有効化や統括の変更は行いません。
 移行先のログイン、プラグイン、外部ツール、権限は別途復元してください。資産内の絶対パスは自動変更されません。
 アーカイブの上限は、1 ファイル **4 MiB**、内容合計 **32 MiB**、圧縮後 **16 MiB**、最大 **5000** ファイルです。
 動画などの大きなメディアは別途移行します。本文の自動匿名化は行わないため、共有前に確認してください。hash は完全性の検査で、出所を証明する署名ではありません。
@@ -230,7 +234,7 @@ npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/code
 
 ## よくある質問
 
-**統括は変更されますか？** 既存のモデル、推論の強度、Fast 設定は維持されます。新規導入では Astra / High を推奨します。
+**統括は変更されますか？** 既存のモデル、推論の強度、Fast 設定は維持されます。Codex の新規導入では Astra / High を推奨し、ほかのプラットフォームの統括はクライアントで選びます。
 `--models` を明示的に使う前にファイルを確認してください。専門職や実行プロファイルがユーザーの統括を自動的に置き換えることはありません。
 
 **有効になったことをどう確認しますか？** `audit` / `doctor` の後、新しいタスクを開いて実際にスタッフを割り当てます。
@@ -246,9 +250,9 @@ npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/code
 
 ## 検証状況と現在の制限
 
-[CI 実行 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909) は Windows/macOS/Linux × Node 22/24 の全ジョブ、両パッケージ実行方法、CI Gate に合格しました。最終テストは **91 件**で、Windows は **90 件成功 / POSIX 専用 1 件スキップ**、macOS と Linux は **91 件成功**です。
+0.2.0 のアダプター・共有資産の自動検査と、独立した読み取り専用の範囲限定レビューは合格しました。Codex は隔離した設定読み取りを確認しました。WorkBuddy 5.8.3 と Claude Code 2.1.39 は実際のネイティブディレクトリに導入し、静的な `doctor` に合格しました。WorkBuddy のスタッフ呼び出しは未完了で、Claude の試行は `Not logged in` となり、モデル呼び出しと課金はありませんでした。Cursor は導入・実行していません。所有者の指示で残りの実クライアント検証を省略して公開するため、全クライアントのスタッフ呼び出し成功は確認していません。
 
-**リリースコードの限定的なレビュー**は合格しました。以前の `assets.mjs` の独立レビューは未完了であり、全面的なセキュリティ監査ではありません。リンク先の CI は、実際の 2 バージョン間のアップグレードや公開 Release からの導入を検証していません。公開と公開 URL からの導入結果は [Release ワークフロー](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml)で確認してください。静的検査はモデルの実動作を証明しません。
+[クライアント検証表（英語）](docs/multi-platform.md#020-client-validation-boundary)を参照してください。CI と公開パッケージの導入結果は [Release ワークフロー](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml)で別に記録します。静的検査、パッケージの smoke 検査、範囲限定レビューは、モデルの実行、実効権限、全面的なセキュリティ監査を証明しません。
 
 3 言語の完全版 README は同じ機能を説明します。CLI と詳しい参考文書の大半は未翻訳で、リンク先の言語を明記しています。[検証記録（英語）](docs/validation.md)と[公開手順（英語）](docs/releasing.md)を参照してください。
 

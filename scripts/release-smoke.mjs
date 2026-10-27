@@ -19,7 +19,7 @@ try {
   assert.ok(response.ok, `Public asset download failed: HTTP ${response.status}`);
   assert.equal(digest(Buffer.from(await response.arrayBuffer())), manifest.sha256, 'Public tarball differs from the tested artifact.');
   // Resolve the public version URL again through npm, with a fresh cache and temporary user home.
-  const invoke = args => execFileSync('npm', ['exec', '--yes', '--ignore-scripts', `--package=${url}`, '--', 'open-jarvis', ...args, '--home', home, '--json'], {
+  const invoke = args => execFileSync('npm', ['exec', '--yes', '--ignore-scripts', `--package=${url}`, '--', 'open-jarvis', ...args, '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], {
     cwd: scratch, encoding: 'utf8', timeout: 120000, env: { ...process.env, HOME: scratch, USERPROFILE: scratch,
       CODEX_HOME: home, npm_config_cache: join(scratch, 'npm-cache'), npm_config_userconfig: join(scratch, 'empty.npmrc'),
       npm_config_update_notifier: 'false', npm_config_ignore_scripts: 'true', npm_config_fetch_retries: '0' },

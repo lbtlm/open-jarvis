@@ -13,7 +13,9 @@
   <a href="https://github.com/lbtlm/open-jarvis/releases"><img src="https://img.shields.io/badge/download-GitHub_Releases-24292f" alt="GitHub Releases"></a>
 </p>
 
-Open Jarvis brings a controller-supervised workflow to **Codex Desktop and CLI**. Use it for development, writing, office work and video tasks: define acceptance, choose capable specialists, verify their execution and keep useful results with your approval.
+Open Jarvis brings a controller-supervised workflow to **Codex, WorkBuddy, Claude Code and Cursor**. Use it for development, writing, office work and video tasks: define acceptance, choose capable specialists, verify their execution and keep useful results with your approval.
+
+**New in 0.2.0:** install independently in each client and share employee and experience assets on one machine. Each client keeps its own models and permissions. See the [multi-platform guide (English)](docs/multi-platform.md) for platform commands and validation limits; Jarvis does not dispatch tasks between applications.
 
 [Quick start](#quick-start) · [Capabilities](#capabilities) · [Workflow](#workflow) · [Employees & settings](#employees-and-settings) · [Commands](#commands) · [Reusable assets](#assets) · [FAQ](#faq) · [Verification](#verification) · [Contributing](#contributing)
 
@@ -21,35 +23,35 @@ Open Jarvis brings a controller-supervised workflow to **Codex Desktop and CLI**
 
 ## Quick start
 
-Requires **Node.js 22+** (npm/npx included) and a signed-in Codex client with standalone subagent role configuration. Desktop and CLI share one installation when they use the same Codex home.
+Requires **Node.js 22+** (npm/npx included) and a client supporting the native configuration described in the [multi-platform guide (English)](docs/multi-platform.md). Live model calls require that client's sign-in and access. The default is Codex; add `--platform workbuddy`, `--platform claude-code` or `--platform cursor` for another client.
 
-Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.1.5**, whose download URL becomes available after publication; update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
+Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.2.0**; its download URL is available once that Release is public. Update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install
 ```
 
-**Choose your setup in the terminal wizard:** controller and worker models, reasoning effort, Fast, and an employee starter. The starter defaults to `none`, so you can begin with the collaboration rules and add specialists as needed. Existing preferences take priority; fresh installs recommend Astra / High for the controller. Fast is separate and defaults to off. Ultra and a switch to Sol are never enabled automatically.
+**Codex setup in the terminal wizard:** controller and worker models, reasoning effort, Fast, and an employee starter. The starter defaults to `none`, so you can begin with the collaboration rules and add specialists as needed. Existing preferences take priority; fresh installs recommend Astra / High for the controller. Fast is separate and defaults to off. Ultra and a switch to Sol are never enabled automatically.
 
 <details>
 <summary>pnpm alternative and reviewed local packages</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
 For a reviewed tarball in your current directory, use either runner:
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
-Both runners use the same Codex home, employees and assets. The package is distributed through GitHub Releases, **not the npm registry**; dependencies may still come from npm, so installation is not necessarily offline. Installation targets `--home`, then `CODEX_HOME`, then `~/.codex`. `--yes` is noninteractive and preserves existing preferences. pnpm **10.18.1** has been tested locally on Windows; see [compatibility (English)](docs/compatibility.md).
+Both runners use the same selected platform home and shared asset root. The package is distributed through GitHub Releases, **not the npm registry**; dependencies may still come from npm, so installation is not necessarily offline. `--home` selects the native platform home. Codex retains `CODEX_HOME` and `~/.codex` defaults; shared assets use `--assets-home`, `JARVIS_HOME` or the saved binding. See the [root selection rules](docs/multi-platform.md#choose-the-asset-root). `--yes` is noninteractive and preserves existing preferences. pnpm **10.18.1** has been tested locally on Windows; see [compatibility (English)](docs/compatibility.md).
 
 </details>
 
-After installation, open a new Codex task and try:
+After installation, open a new task in that client and try (in Cursor, explicitly invoke `/jarvis-orchestrator`):
 
 > Complete this task using Jarvis. Have the controller define acceptance, select specialists by capability, supervise execution and accept the result. Record actual agent IDs and evidence of runtime settings.
 
@@ -99,6 +101,8 @@ Approval, availability and a fixed model do not establish professional competenc
 If no specialist matches, the controller proposes a temporary employee with responsibilities, skills and settings, then dispatches after user approval.
 It does not force an unrelated employee into the task or rename one to imply expertise.
 
+The following are **Codex recommendations**. WorkBuddy, Claude Code and Cursor profiles default to `inherit`; their controller model stays in the client. See [native model settings](docs/multi-platform.md#native-adapters-and-official-references).
+
 | Execution profile | Recommended model / effort | Suitable work |
 | --- | --- | --- |
 | `controller` | GPT-6 Astra / High | Coordination, supervision and final acceptance |
@@ -115,7 +119,7 @@ The default is one executor. At most three subagents run concurrently, including
 Executors do not delegate recursively. Independent review is triggered by specified risks or evidence, rather than required for every task.
 If necessary model, Fast or Reviewer read-only settings cannot be preserved, report that dispatch as blocked.
 
-**Plan options in v0.1.5:** after this release is published, `plan --employee atlas-backend --difficulty micro` selects the existing `luna` profile and inherits its installed settings. An explicit `--effort low` is an example of a task-only override, validated against the selected model; micro does not automatically lower effort. This does not change global settings or employee identity. When effort differs from the installed profile, the controller must bind it explicitly at runtime; a preview does not prove native-role settings changed. Replace `atlas-backend` with an existing matching employee ID. See [routing (English)](docs/routing.md).
+**Plan options:** `plan --employee atlas-backend --difficulty micro` selects the existing `luna` profile and inherits its installed settings. An explicit `--effort low` is an example of a task-only override, validated against the selected model; micro does not automatically lower effort. This does not change global settings or employee identity. When effort differs from the installed profile, the controller must bind it explicitly at runtime; a preview does not prove native-role settings changed. Replace `atlas-backend` with an existing matching employee ID. See [routing (English)](docs/routing.md).
 
 <details>
 <summary>Starter cards and skill planning</summary>
@@ -133,9 +137,9 @@ The older `employees --init --yes` command remains compatible and defaults to ad
 For example, preview writing candidates before explicitly writing them:
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
@@ -154,10 +158,10 @@ An employee card is a file asset, not a resident process. See [employee conventi
 The entries below are **command suffixes**, not standalone shell commands. Append one to the full runner prefix:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis
 ```
 
-For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.1.5.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis` and keep the suffix unchanged.
+For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.2.0.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis` and keep the suffix unchanged.
 
 | Command suffix | Purpose |
 | --- | --- |
@@ -173,12 +177,12 @@ For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/o
 For example, run the static check with:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
-`--home PATH` selects the Codex home; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
-Use `npx --package ./open-jarvis-0.1.5.tgz open-jarvis --help` for all options.
+`--platform codex|workbuddy|claude-code|cursor` selects the adapter; `--home PATH` selects its native home; `--assets-home PATH` selects the shared personal library; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
+Use `npx --package ./open-jarvis-0.2.0.tgz open-jarvis --help` for all options.
 `audit` and `doctor` make no live model requests and do not prove an employee has run.
 
 <a id="assets"></a>
@@ -190,12 +194,12 @@ Employee experience, skills, knowledge, preferences and templates can be retaine
 Approval for a task or temporary hire is not approval for permanent retention. This does not train models or automatically rewrite long-term instructions.
 Scores, retrospectives and statistics are not compulsory after every task. See [asset evolution (Chinese)](docs/asset-evolution.md).
 
-**Markdown experience:** the Markdown experience workflow keeps task-local candidates separate from approved `knowledge/experience/` records, previews the exact content before saving, and selects current source references for plans. It supports personal and project scope with basic Unicode lookup. Optional, separately installed QMD enables scoped employee, skill and experience discovery, with embedding-only semantic retrieval and a direct-file fallback. Employee cards link to canonical experience rather than copying its text. See [Markdown experience (English)](docs/experience.md) for the workflow and v0.1.5 examples, usable after publication.
+**Markdown experience:** the Markdown experience workflow keeps task-local candidates separate from approved `knowledge/experience/` records, previews the exact content before saving, and selects current source references for plans. It supports personal and project scope with basic Unicode lookup. Optional, separately installed QMD enables scoped employee, skill and experience discovery, with embedding-only semantic retrieval and a direct-file fallback. Employee cards link to canonical experience rather than copying its text. See [Markdown experience (English)](docs/experience.md) for the workflow and examples.
 
-**Optional QMD installation:** default `install` does not download QMD and preserves existing QMD environments and connections. The interactive wizard offers QMD installation with npm or pnpm, an installation directory and `auto` or `cpu` device selection; it invokes the package manager only after final confirmation. After v0.1.5 is published, use this noninteractive command:
+**Optional QMD installation:** default `install` does not download QMD and preserves existing QMD environments and connections. The interactive wizard offers QMD installation with npm or pnpm, an installation directory and `auto` or `cpu` device selection; it invokes the package manager only after final confirmation. Use this noninteractive command for Codex:
 
 ```sh
-npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 Replace the package and absolute directory paths; `--qmd-manager pnpm` is also supported. This installs the engine and platform native packages. It does not download models, build indexes, install drivers or install the full CUDA Toolkit. Semantic retrieval needs models and an index of approved assets. GPU detection and CPU fallback follow QMD; installed packages do not prove CUDA works, and Windows may need an optional cuBLAS runtime. A QMD failure is reported as partial installation while Jarvis may remain installed. See [QMD details (English)](docs/experience.md).
@@ -203,22 +207,22 @@ Replace the package and absolute directory paths; `--qmd-manager pnpm` is also s
 <details>
 <summary>Migration commands, paths and limits</summary>
 
-Personal assets live under `jarvis/` in the Codex home; project assets live under `.jarvis/`.
+Personal assets use the selected shared root (new default `~/.jarvis`); existing Codex `<home>/jarvis` remains compatible in place. Project assets live under `.jarvis/`. Select the same `--assets-home` for each client.
 Export includes employees, knowledge, preferences, resources, selected skill directories and model preferences.
-`jarvis/skills.json` explicitly registers supporting skill dependencies; export does not scan every skill or plugin or infer all dependencies from prose.
-Default skill roots are project `.agents/skills`, project `.codex/skills`, home `skills`, then sibling `.agents/skills` beside the home.
+`<assets-home>/skills.json` explicitly registers supporting skill dependencies; export does not scan every skill or plugin or infer all dependencies from prose.
+Skill lookup uses the selected platform's project skills, project `.agents/skills`, native home `skills` and user `.agents/skills`; Codex also retains its `.codex/skills` path.
 Repeated `--skill-root PATH` options completely replace the default export-root list.
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
 ```
 
 For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.
 Import previews first; `--yes` writes. Identical content is skipped; any differing content stops the entire batch without overwriting or running scripts.
-Replace the path in the last command. Review model preferences before explicitly activating them through installation; import alone does not change the controller.
+Replace the path in the last Codex example. Import writes portable assets to the selected library; non-Codex source model preferences use `models.<source-platform>.json`, while Codex uses `models.json`. Review them before explicitly installing for the target platform; import does not activate them or change a controller.
 Restore sign-in, plugins, external tools and permissions separately on the destination. Absolute paths inside assets are not rewritten.
 Archive limits: **4 MiB** per file, **32 MiB** total content, **16 MiB** compressed and **5000** files.
 Move large media such as video separately. Export does not redact file contents; review before sharing. Hashes check integrity, not source authenticity.
@@ -230,7 +234,7 @@ See [asset procedures (English)](payload/skills/jarvis-orchestrator/references/a
 
 ## FAQ
 
-**Will it replace my controller?** Existing model, effort and Fast preferences are preserved; a fresh installation recommends Astra / High.
+**Will it replace my controller?** Existing model, effort and Fast preferences are preserved; a fresh Codex installation recommends Astra / High. Other clients keep their controller selection in the client.
 Review a file before explicitly applying `--models`. Professions and execution profiles do not automatically replace the user's controller.
 
 **How do I verify it is active?** Run `audit` / `doctor`, then open a new task and perform an actual dispatch.
@@ -246,9 +250,9 @@ Installation and rollback manage their own configuration without deleting user e
 
 ## Verification and current limits
 
-[CI run 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909) passed every Windows/macOS/Linux × Node 22/24 job, both package runners and CI Gate. The final suite contained **91 tests**: Windows **90 passed / 1 POSIX-only skipped**; macOS and Linux **91 passed**.
+The 0.2.0 adapter/shared-library checks and scoped independent read-only review passed. Codex passed an isolated configuration-read check. WorkBuddy 5.8.3 and Claude Code 2.1.39 were installed into their real native homes and passed static `doctor`; WorkBuddy employee invocation was not completed, and the Claude probe returned `Not logged in` with no model call or charge. Cursor was not installed or invoked. The owner chose to skip the remaining live-client checks and proceed with release; this does not establish successful employee calls across all clients.
 
-A **limited review of release code** passed. The older independent review of `assets.mjs` remains incomplete; this is not a full security audit. The linked CI run does not verify a two-real-version upgrade or installation from a public Release. Check the [Release workflow](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml) for publication and public-URL installation results. Static checks do not prove live model capabilities.
+See the [client validation matrix (English)](docs/multi-platform.md#020-client-validation-boundary). The [Release workflow](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml) records CI and public-package installation results separately. Static checks, package smoke and scoped review do not prove actual model execution, effective runtime permissions or a full security audit.
 
 These three full READMEs describe the same features. The CLI and detailed reference documents remain mostly untranslated; linked documents are labeled by language. See [validation (English)](docs/validation.md) and [release procedures (English)](docs/releasing.md).
 

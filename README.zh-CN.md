@@ -13,7 +13,9 @@
   <a href="https://github.com/lbtlm/open-jarvis/releases"><img src="https://img.shields.io/badge/download-GitHub_Releases-24292f" alt="GitHub Releases"></a>
 </p>
 
-Open Jarvis 为 **Codex Desktop 和 CLI** 提供主控监督的协作流程。适用于开发、写作、办公和视频任务：定义验收、选择合适员工、核验执行，并经你批准保留可复用成果。
+Open Jarvis 为 **Codex、WorkBuddy、Claude Code 和 Cursor** 提供主控监督的协作流程。适用于开发、写作、办公和视频任务：定义验收、选择合适员工、核验执行，并经你批准保留可复用成果。
+
+**0.2.0 新增：** 各客户端独立安装使用，同机共享员工与经验资产，各自保留模型和权限。平台命令与验收边界见[多平台指南（英文）](docs/multi-platform.md)；Jarvis 不跨软件派发任务。
 
 [快速开始](#quick-start) · [核心能力](#capabilities) · [工作流程](#workflow) · [员工与设置](#employees-and-settings) · [常用命令](#commands) · [可复用资产](#assets) · [常见问题](#faq) · [验证情况](#verification) · [贡献](#contributing)
 
@@ -21,35 +23,35 @@ Open Jarvis 为 **Codex Desktop 和 CLI** 提供主控监督的协作流程。�
 
 ## 快速开始
 
-需要 **Node.js 22+**（含 npm/npx）及已登录、支持独立子代理角色配置的 Codex。Desktop 和 CLI 共用 Codex home 时只需安装一次。
+需要 **Node.js 22+**（含 npm/npx）及支持[多平台指南（英文）](docs/multi-platform.md)所述原生配置的客户端。真实模型调用需要该客户端的登录与访问权限。默认目标为 Codex；其他客户端分别添加 `--platform workbuddy`、`--platform claude-code` 或 `--platform cursor`。
 
-从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.1.5** 为例，其下载地址在发布后可用，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
+从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.2.0** 为例，其下载地址在发布后可用，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install
 ```
 
-**在终端向导中选择配置：** 主控和执行角色的模型、思考强度、Fast，以及员工模板。模板默认为 `none`，可先安装协作规则，再按需添加员工。已有偏好优先；全新安装的主控推荐 Astra / High。Fast 单独选择，默认关闭，不会自动开启 Ultra 或切换到 Sol。
+**在 Codex 终端向导中选择配置：** 主控和执行角色的模型、思考强度、Fast，以及员工模板。模板默认为 `none`，可先安装协作规则，再按需添加员工。已有偏好优先；全新安装的主控推荐 Astra / High。Fast 单独选择，默认关闭，不会自动开启 Ultra 或切换到 Sol。
 
 <details>
 <summary>pnpm 等价入口与经过审阅的本地安装包</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
 将审阅过的安装包放在当前目录后，任选一个入口：
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install
 ```
 
-两种入口共用 Codex home、员工和资产。包通过 GitHub Releases 分发，**未发布到 npm registry**；依赖仍可能从 npm 获取，不保证完全离线。安装目标依次取 `--home`、`CODEX_HOME`、`~/.codex`。`--yes` 非交互安装并保留已有偏好。pnpm **10.18.1** 已在 Windows 本地验证，详见[兼容性说明（英文）](docs/compatibility.md)。
+两种入口共用所选平台的原生 home 和共享资产根。包通过 GitHub Releases 分发，**未发布到 npm registry**；依赖仍可能从 npm 获取，不保证完全离线。`--home` 选择平台原生配置根；Codex 保留 `CODEX_HOME` 和 `~/.codex` 默认值。共享资产根使用 `--assets-home`、`JARVIS_HOME` 或已保存的绑定，详见[选择规则（英文）](docs/multi-platform.md#choose-the-asset-root)。`--yes` 非交互安装并保留已有偏好。pnpm **10.18.1** 已在 Windows 本地验证，详见[兼容性说明（英文）](docs/compatibility.md)。
 
 </details>
 
-安装后打开新的 Codex 任务，例如：
+安装后在对应客户端打开新任务，例如（Cursor 中需显式调用 `/jarvis-orchestrator`）：
 
 > 按 Jarvis 流程完成这个任务。主控定义验收，按能力选择员工，监督执行并最终验收；记录真实代理 ID 和运行时设置证据。
 
@@ -99,6 +101,8 @@ flowchart TD
 缺少匹配岗位时，主控提出临时新员工，说明职责、技能与设置，获用户批准后派发。
 不会强行复用无关员工，也不会通过改名宣称已有能力。
 
+以下为 **Codex 推荐设置**。WorkBuddy、Claude Code 和 Cursor 的执行档位默认 `inherit`，主控模型由客户端选择，详见[原生模型设置（英文）](docs/multi-platform.md#native-adapters-and-official-references)。
+
 | 执行档位 | 推荐模型 / 思考强度 | 适用任务 |
 | --- | --- | --- |
 | `controller`（主控） | GPT-6 Astra / High | 调度、监督与最终验收 |
@@ -115,7 +119,7 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 执行者不递归委派。独立复核由明确风险或证据触发，并非每个任务都安排。
 无法保留必要模型、Fast 或 Reviewer 只读权限时，应报告该派发阻塞。
 
-**0.1.5 计划选项：** 此版本发布后，`plan --employee atlas-backend --difficulty micro` 映射现有 `luna` 档位，默认继承其安装设置。显式 `--effort low` 是仅覆盖本次思考强度的示例，合法性按所选模型核验；micro 不自动降低思考强度，不写全局设置、不改变员工身份。与安装档位不同的思考强度必须在运行时显式绑定；预览不能证明原生角色设置已改变。将 `atlas-backend` 替换为已有且匹配的员工 ID，详见[分流说明（英文）](docs/routing.md)。
+**计划选项：** `plan --employee atlas-backend --difficulty micro` 映射现有 `luna` 档位，默认继承其安装设置。显式 `--effort low` 是仅覆盖本次思考强度的示例，合法性按所选模型核验；micro 不自动降低思考强度，不写全局设置、不改变员工身份。与安装档位不同的思考强度必须在运行时显式绑定；预览不能证明原生角色设置已改变。将 `atlas-backend` 替换为已有且匹配的员工 ID，详见[分流说明（英文）](docs/routing.md)。
 
 <details>
 <summary>员工模板与技能计划</summary>
@@ -133,9 +137,9 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 例如，预览写作候选卡后再明确写入：
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
@@ -154,10 +158,10 @@ npx --package ./open-jarvis-0.1.5.tgz open-jarvis plan --employee nova-writer --
 下表是**命令后缀**，不能单独作为 shell 命令运行。请把其中一项接在完整入口后：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis
 ```
 
-所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.1.5.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.1.5.tgz dlx open-jarvis`，后缀保持不变。
+所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.2.0.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis`，后缀保持不变。
 
 | 命令后缀 | 用途 |
 | --- | --- |
@@ -173,12 +177,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 例如，执行静态检查：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` 是占位路径，请换成实际安装清单。
-`--home PATH` 选择 Codex home；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx --package ./open-jarvis-0.1.5.tgz open-jarvis --help` 查看。
+`--platform codex|workbuddy|claude-code|cursor` 选择适配器，`--home PATH` 选择其原生配置根，`--assets-home PATH` 选择共享个人资产根；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
+完整参数可通过 `npx --package ./open-jarvis-0.2.0.tgz open-jarvis --help` 查看。
 `audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
 
 <a id="assets"></a>
@@ -190,12 +194,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 任务批准或临时雇佣不等于永久保存批准；不会自动训练模型或改写长期指令。
 无需每次强制评分、复盘或统计。详见[资产自进化（中文）](docs/asset-evolution.md)。
 
-**Markdown 经验：** Markdown 经验流程将任务内候选与获准的 `knowledge/experience/` 记录分开，保存前预览具体内容，并为计划选取当前原文引用。支持个人与项目范围及基本 Unicode 检索；可选接入另行安装的 QMD，按范围检索员工、技能和经验，按需使用嵌入模型进行语义检索，不可用时回退本地查询。员工卡链接到唯一经验原文，不重复复制正文。流程与 0.1.5 示例见 [Markdown 经验（英文）](docs/experience.md)，发布后可使用。
+**Markdown 经验：** Markdown 经验流程将任务内候选与获准的 `knowledge/experience/` 记录分开，保存前预览具体内容，并为计划选取当前原文引用。支持个人与项目范围及基本 Unicode 检索；可选接入另行安装的 QMD，按范围检索员工、技能和经验，按需使用嵌入模型进行语义检索，不可用时回退本地查询。员工卡链接到唯一经验原文，不重复复制正文。流程与示例见 [Markdown 经验（英文）](docs/experience.md)。
 
-**可选安装 QMD：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。0.1.5 发布后，非交互安装使用以下命令：
+**可选安装 QMD：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。Codex 非交互安装使用以下命令：
 
 ```sh
-npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open-jarvis-0.1.5.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 替换实际包路径与绝对安装目录；也支持 `--qmd-manager pnpm`。仅安装引擎和平台 native 包，不自动下载模型、建索引、装驱动或完整 CUDA Toolkit。语义检索仍需模型与获准资产索引就绪。GPU 检测和 CPU 回退沿用 QMD；安装包存在不证明 CUDA 可用，Windows 可能还需可选 cuBLAS 运行库。QMD 失败会报告部分安装，Jarvis 可保留安装结果。详见 [QMD 说明（英文）](docs/experience.md)。
@@ -203,22 +207,22 @@ npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.1.5/open
 <details>
 <summary>迁移命令、路径与限额</summary>
 
-个人资产位于 Codex home 的 `jarvis/`，项目资产位于 `.jarvis/`。
+个人资产使用所选共享根（新库默认 `~/.jarvis`），既有 Codex `<home>/jarvis` 可原地兼容；项目资产位于 `.jarvis/`。各客户端选择同一个 `--assets-home`。
 导出包括员工、知识、偏好、resources、选中技能目录和模型偏好。
-`jarvis/skills.json` 显式登记支持技能依赖；不会自动扫描所有技能、插件或解析全部正文依赖。
-默认技能根目录依次是项目 `.agents/skills`、项目 `.codex/skills`、home `skills`、home 同级 `.agents/skills`。
+`<assets-home>/skills.json` 显式登记支持技能依赖；不会自动扫描所有技能、插件或解析全部正文依赖。
+技能查找使用所选平台的项目技能、项目 `.agents/skills`、原生 home `skills` 和用户 `.agents/skills`；Codex 同时保留 `.codex/skills` 路径。
 重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
 
 ```sh
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/codex-home/jarvis/models.json --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.2.0.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
 ```
 
 有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。
 导入先预览，`--yes` 才写入；相同内容跳过，任何内容差异使整批停止，不覆盖或执行脚本。
-最后一条命令中的路径需替换；先审阅模型偏好，再明确安装激活，导入本身不会改变主控。
+最后一条 Codex 示例中的路径需替换。导入将可移植资产写入所选共享库；非 Codex 来源的模型偏好使用 `models.<source-platform>.json`，Codex 使用 `models.json`。先审阅再明确为目标平台安装；导入不激活模型偏好，也不改变主控。
 目标机器的登录、插件、外部工具与权限须另行恢复；资产中的绝对路径不会自动重写。
 归档限额：单文件 **4 MiB**、总内容 **32 MiB**、压缩包 **16 MiB**、最多 **5000** 个文件。
 视频等大媒体另行迁移。导出不自动脱敏正文，分享前请审阅；hash 校验是完整性检查，不是来源签名。
@@ -230,7 +234,7 @@ npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/code
 
 ## 常见问题
 
-**会改掉我的主控吗？** 已有模型、思考强度和 Fast 偏好会保留；新安装推荐 Astra / High。
+**会改掉我的主控吗？** 已有模型、思考强度和 Fast 偏好会保留；新安装 Codex 推荐 Astra / High，其他平台的主控由客户端选择。
 显式使用 `--models` 前先审阅文件。专业岗位与模型档位不会自动替换用户主控。
 
 **怎样确认安装生效？** 先运行 `audit` / `doctor`，再打开新任务并实际派发。
@@ -246,9 +250,9 @@ npx --package ./open-jarvis-0.1.5.tgz open-jarvis install --models /path/to/code
 
 ## 验证情况与当前限制
 
-[CI 运行 36688019909](https://github.com/lbtlm/open-jarvis/actions/runs/36688019909) 已通过全部 Windows/macOS/Linux × Node 22/24 矩阵任务、两种包入口和 CI Gate。最终测试集共 **91 项**：Windows **90 通过 / 1 项仅限 POSIX 的测试跳过**；macOS 和 Linux **91 通过**。
+0.2.0 的适配器/共享资产自动化检查与独立只读范围复核已通过。Codex 通过隔离配置读取；WorkBuddy 5.8.3 和 Claude Code 2.1.39 已安装到真实原生目录并通过静态 `doctor`。WorkBuddy 尚未完成员工调用，Claude 探测返回 `Not logged in`，没有模型调用或费用；Cursor 未安装或运行。用户选择跳过剩余真实客户端验收并发布，这不代表所有客户端的员工调用均已通过。
 
-**发行代码的有限范围复核**已通过。较早的 `assets.mjs` 独立复核仍未完成，不代表完整安全审计。所链接的 CI 未验证两个真实版本之间的升级或公开 Release 的安装；发布及公开地址安装结果请查看 [Release 工作流](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml)。静态检查不证明实时模型能力。
+详见[客户端验收矩阵（英文）](docs/multi-platform.md#020-client-validation-boundary)。CI 与公开安装包检查结果由 [Release 工作流](https://github.com/lbtlm/open-jarvis/actions/workflows/release.yml)单独记录。静态检查、安装包 smoke 与范围复核不证明实际模型执行、有效运行时权限或完整安全审计。
 
 三份完整 README 介绍同一套功能。CLI 和详细参考文档大多尚未翻译，链接已标明目标语言。详见[验证记录（英文）](docs/validation.md)和[发布流程（英文）](docs/releasing.md)。
 

@@ -20,6 +20,10 @@ import { isDeepStrictEqual } from 'node:util';
 import { parse as parseToml } from 'smol-toml';
 
 import { roleKeys, effortNames, supportedEfforts, defaultModels } from './profiles.mjs';
+import { resolveModels, patchConfig, renderRole, renderReviewer } from './platforms/codex.mjs';
+import { platformAdapter, nativeModels, renderNativeRole, readExecutionProfile, checkNativeRoleCollisions } from './platforms/index.mjs';
+import { assetRoot } from './asset-root.mjs';
+import { checkAncestors } from './asset-paths.mjs';
 export { supportedEfforts, defaultModels } from './profiles.mjs';
 
 const PAYLOAD = fileURLToPath(new URL('../payload/', import.meta.url));
@@ -27,11 +31,12 @@ const START = '<!-- JARVIS_START -->';
 const END = '<!-- JARVIS_END -->';
 // Persistent receipt identity: keep recognizing installations made before the Open Jarvis rename.
 const PACKAGE = 'codex-jarvis';
-const MANIFEST_VERSION = 3;
+const MANIFEST_VERSION = 4;
 const ROLE_KEYS = roleKeys;
 const ROLE_NAMES = ROLE_KEYS.map(key => `jarvis_${key}`);
 const EFFORTS = new Set(effortNames);
 const MANAGED_PATHS = new Set([
+  'jarvis-platform.json',
   'config.toml',
   'AGENTS.md',
   ...ROLE_KEYS.map(key => `agents/jarvis_${key}.toml`),
@@ -41,6 +46,7 @@ const MANAGED_PATHS = new Set([
   'skills/jarvis-orchestrator/references/employee-card.md',
   'skills/jarvis-orchestrator/references/assets.md',
   'skills/jarvis-orchestrator/references/domains.md',
+  'skills/jarvis-orchestrator/references/platform.md',
 ]);
 const installLocks = new Set();
 
@@ -73,7 +79,9 @@ function parseConfig(data, label = 'TOML') {
 function normalizeHome(value) {
   if (typeof value !== 'string' || value.length === 0) fail('options.home must be a non-empty absolute path.');
   if (!isAbsolute(value)) fail('options.home must be an absolute path.');
-  return resolve(value);
+  const home = resolve(value);
+  assertNoLinks(home, home);
+  return home;
 }
 
 function validateRelativePath(value) {
@@ -95,6 +103,8 @@ function targetPath(root, relativePath) {
 
 function assertNoLinks(root, target, includeTarget = true) {
   const absoluteRoot = resolve(root);
+  try { checkAncestors(absoluteRoot); }
+  catch { fail(`Refusing to use symlink or junction in native root ancestry: ${absoluteRoot}`); }
   const absoluteTarget = resolve(target);
   const rel = relative(absoluteRoot, absoluteTarget);
   if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) fail('Path escapes protected root.');
@@ -149,166 +159,13 @@ function protectBackupDirectory(path) {
   if (acl.status !== 0) fail('Could not restrict backup directory permissions.');
 }
 
-function resolveModels(overrides = undefined, controllerEffort = undefined, base = defaultModels) {
-  if (overrides !== undefined && (!overrides || typeof overrides !== 'object' || Array.isArray(overrides))) {
-    fail('options.models must be an object.');
-  }
-  const result = Object.fromEntries(Object.entries(defaultModels).map(([key, value]) => {
-    const selected = base?.[key] ?? value;
-    if (!selected || typeof selected.model !== 'string' || !selected.model || typeof selected.effort !== 'string' || !selected.effort) {
-      fail(`Stored model mapping ${key} is invalid.`);
-    }
-    if (/\s|[\u0000-\u001f\u007f]/.test(selected.model)) fail(`Stored model mapping ${key}.model contains whitespace or control characters.`);
-    if (!EFFORTS.has(selected.effort)) fail(`Stored model mapping ${key}.effort is unknown.`);
-    return [key, {
-      model: selected.model,
-      effort: selected.effort,
-      ...(Object.hasOwn(selected, 'fast') ? { fast: selected.fast } : {}),
-    }];
-  }));
-  for (const [key, value] of Object.entries(overrides ?? {})) {
-    if (!Object.hasOwn(result, key)) fail(`Unknown model mapping key: ${key}`);
-    if (!value || typeof value !== 'object' || Array.isArray(value)) fail(`Model mapping ${key} must be an object.`);
-    const unknown = Object.keys(value).filter(field => !['model', 'effort', 'fast'].includes(field));
-    if (unknown.length) fail(`Unknown field in model mapping ${key}: ${unknown[0]}`);
-    if (!Object.hasOwn(value, 'model') && !Object.hasOwn(value, 'effort') && !Object.hasOwn(value, 'fast')) {
-      fail(`Model mapping ${key} is empty.`);
-    }
-    for (const field of ['model', 'effort']) {
-      if (Object.hasOwn(value, field) && (typeof value[field] !== 'string' || value[field].trim() === '')) {
-        fail(`Model mapping ${key}.${field} must be a non-empty string.`);
-      }
-      if (Object.hasOwn(value, field)) result[key][field] = value[field];
-    }
-    if (Object.hasOwn(value, 'model') && /\s|[\u0000-\u001f\u007f]/.test(value.model)) {
-      fail(`Model mapping ${key}.model contains whitespace or control characters.`);
-    }
-    if (Object.hasOwn(value, 'effort') && !EFFORTS.has(value.effort)) fail(`Unknown reasoning effort: ${value.effort}`);
-    if (Object.hasOwn(value, 'fast')) {
-      if (typeof value.fast !== 'boolean') fail(`Model mapping ${key}.fast must be boolean.`);
-      result[key].fast = value.fast;
-    }
-  }
-  if (controllerEffort !== undefined) {
-    if (typeof controllerEffort !== 'string' || controllerEffort.trim() === '') fail('controllerEffort must be a non-empty string.');
-    if (!EFFORTS.has(controllerEffort)) fail(`Unknown reasoning effort: ${controllerEffort}`);
-    result.controller.effort = controllerEffort;
-  }
-  for (const [key, choice] of Object.entries(result)) {
-    if (!supportedEfforts(choice.model).includes(choice.effort)) {
-      fail(`Model mapping ${key}: ${choice.model} does not support Codex effort ${choice.effort}.`);
-    }
-  }
-  return result;
-}
 
-function splitLines(text) {
-  return text.match(/.*?(?:\r\n|\n|$)/g).filter(line => line !== '');
-}
 
-function patchConfig(original, models, controllerEffortExplicit) {
-  const text = decode(original);
-  const parsed = parseConfig(original, 'config.toml');
-  const agents = parsed.agents;
-  if (agents && typeof agents === 'object' && Object.hasOwn(agents, 'max_threads')) {
-    fail('Legacy agents.max_threads needs a reviewed runtime migration; no files changed.');
-  }
-  if (agents !== undefined && (typeof agents !== 'object' || Array.isArray(agents))) {
-    fail('Existing agents setting is not a table; no files changed.');
-  }
-  if (agents !== undefined && !/^\s*\[agents\]\s*(?:#.*)?$/m.test(text) && /^\s*agents\s*=/m.test(text)) {
-    fail('Inline agents table needs manual merge; no files changed.');
-  }
-  if (agents && ROLE_NAMES.some(name => Object.hasOwn(agents, name))) {
-    fail('Existing config.toml Jarvis role declaration needs manual merge; no files changed.');
-  }
-  const concurrency = agents?.max_concurrent_threads_per_session;
-  if (concurrency !== undefined && (!Number.isSafeInteger(concurrency) || concurrency < 1)) {
-    fail('Existing agents.max_concurrent_threads_per_session must be a positive integer; no files changed.');
-  }
-  const controllerFastExplicit = Object.hasOwn(models.controller, 'fast');
-  if (controllerFastExplicit && models.controller.fast && parsed.features !== undefined
-      && (!parsed.features || typeof parsed.features !== 'object' || Array.isArray(parsed.features))) {
-    fail('Existing features setting is not a table; no files changed.');
-  }
-  if (controllerFastExplicit && models.controller.fast && parsed.features !== undefined
-      && !/^\s*\[features\]\s*(?:#.*)?$/m.test(text) && /^\s*features\s*=/m.test(text)) {
-    fail('Inline features table needs manual merge; no files changed.');
-  }
 
-  const newline = text.includes('\r\n') ? '\r\n' : '\n';
-  const selectedEffort = controllerEffortExplicit
-    ? models.controller.effort
-    : (typeof parsed.model_reasoning_effort === 'string' ? parsed.model_reasoning_effort : models.controller.effort);
-  if (!supportedEfforts(models.controller.model).includes(selectedEffort)) {
-    fail(`Selected controller model ${models.controller.model} does not support Codex effort ${selectedEffort}; choose a supported effort explicitly.`);
-  }
-  const targets = {
-    '': {
-      model: models.controller.model,
-      model_reasoning_effort: selectedEffort,
-      ...(controllerFastExplicit ? { service_tier: models.controller.fast ? 'fast' : 'default' } : {}),
-    },
-    agents: {
-      enabled: true,
-      default_subagent_model: models.terra.model,
-      default_subagent_reasoning_effort: models.terra.effort,
-      ...(concurrency === undefined ? { max_concurrent_threads_per_session: 3 } : {}),
-    },
-    ...(controllerFastExplicit && models.controller.fast ? { features: { fast_mode: true } } : {}),
-  };
-  const seen = Object.fromEntries(Object.keys(targets).map(key => [key, new Set()]));
-  const output = [];
-  let section = '';
-  const presentHeaders = new Set();
-  const appendMissing = name => {
-    if (!Object.hasOwn(targets, name)) return;
-    for (const [key, value] of Object.entries(targets[name])) {
-      if (seen[name].has(key)) continue;
-      if (output.length && !/(?:\r\n|\n)$/.test(output.at(-1))) output[output.length - 1] += newline;
-      output.push(`${key} = ${JSON.stringify(value)}${newline}`);
-      seen[name].add(key);
-    }
-  };
-  for (const line of splitLines(text)) {
-    const trimmed = line.replace(/(?:\r\n|\n)$/, '').trim();
-    const header = trimmed.match(/^\[([^\[\]]+)\]\s*(?:#.*)?$/);
-    const arrayHeader = /^\s*\[\[/.test(line);
-    if (header || arrayHeader) {
-      appendMissing(section);
-      section = header ? header[1].trim() : '<array>';
-      presentHeaders.add(section);
-    }
-    const assignment = line.match(/^\s*([A-Za-z0-9_-]+)\s*=/);
-    if (Object.hasOwn(targets, section) && assignment && Object.hasOwn(targets[section], assignment[1])) {
-      const key = assignment[1];
-      output.push(`${key} = ${JSON.stringify(targets[section][key])}${newline}`);
-      seen[section].add(key);
-    } else {
-      output.push(line);
-    }
-  }
-  appendMissing(section);
-  for (const name of Object.keys(targets).filter(name => name && !presentHeaders.has(name))) {
-    if (output.length && !/(?:\r\n|\n)$/.test(output.at(-1))) output[output.length - 1] += newline;
-    output.push(`${newline}[${name}]${newline}`);
-    appendMissing(name);
-  }
-  const result = output.join('');
-  const after = parseConfig(Buffer.from(result), 'generated config.toml');
-  const expected = parsed;
-  expected.model = targets[''].model;
-  expected.model_reasoning_effort = targets[''].model_reasoning_effort;
-  expected.agents = { ...(expected.agents ?? {}), ...targets.agents };
-  if (controllerFastExplicit) expected.service_tier = targets[''].service_tier;
-  if (controllerFastExplicit && models.controller.fast) expected.features = { ...(expected.features ?? {}), fast_mode: true };
-  if (!isDeepStrictEqual(after, expected)) fail('Config merge altered unrelated settings; refusing write.');
-  return encodeLike(original, result);
-}
-
-function patchInstructions(original) {
+function patchInstructions(original, adapter = platformAdapter(), assetsHome) {
   let text = decode(original);
-  const block = readFileSync(join(PAYLOAD, 'AGENTS.block.md'), 'utf8').replace(/^\uFEFF/, '').trim();
+  let block = readFileSync(join(PAYLOAD, 'AGENTS.block.md'), 'utf8').replace(/^\uFEFF/, '').trim();
+  if (assetsHome) block = block.replace(END, `\nJarvis platform: ${adapter.id}. Shared asset home: ${JSON.stringify(assetsHome)}. Read the local jarvis-platform.json and skills/jarvis-orchestrator/references/platform.md for native settings.\n${END}`);
   const starts = text.split(START).length - 1;
   const ends = text.split(END).length - 1;
   if (starts !== ends || starts > 1) fail('Malformed Jarvis markers; refusing instructions merge.');
@@ -323,49 +180,6 @@ function patchInstructions(original) {
   return encodeLike(original, text);
 }
 
-function renderRole(source, key, models) {
-  const data = parseConfig(source, `payload role jarvis_${key}.toml`);
-  if (data.name !== `jarvis_${key}` || !data.description || !data.developer_instructions) {
-    fail(`Incomplete or incorrect payload role: jarvis_${key}`);
-  }
-  let text = decode(source).replaceAll('\r\n', '\n')
-    .replace(/(?:\r?\n)?^\s*service_tier\s*=.*(?:\r?\n|$)/m, '\n')
-    .replace(/(?:\r?\n)?^\s*\[features\]\s*(?:#.*)?\r?\n\s*fast_mode\s*=\s*(?:true|false)\s*(?:#.*)?(?:\r?\n|$)/m, '\n');
-  const replace = (field, value) => {
-    const pattern = new RegExp(`^\\s*${field}\\s*=.*$`, 'm');
-    if (pattern.test(text)) text = text.replace(pattern, `${field} = ${JSON.stringify(value)}`);
-    else text = `${field} = ${JSON.stringify(value)}\n${text}`;
-  };
-  replace('model', models[key].model);
-  replace('model_reasoning_effort', models[key].effort);
-  if (Object.hasOwn(models[key], 'fast')) {
-    if (/^\s*service_tier\s*=/m.test(text)) {
-      text = text.replace(/^\s*service_tier\s*=.*$/m, `service_tier = ${JSON.stringify(models[key].fast ? 'fast' : 'default')}`);
-    } else {
-      text = text.replace(/^\s*model_reasoning_effort\s*=.*$/m, match => `${match}\nservice_tier = ${JSON.stringify(models[key].fast ? 'fast' : 'default')}`);
-    }
-    if (models[key].fast) {
-      if (/^\s*\[features\]\s*(?:#.*)?$/m.test(text)) {
-        if (/^\s*fast_mode\s*=/m.test(text)) text = text.replace(/^\s*fast_mode\s*=.*$/m, 'fast_mode = true');
-        else text = text.replace(/^\s*\[features\]\s*(?:#.*)?$/m, match => `${match}\nfast_mode = true`);
-      } else {
-        text = `${text.trimEnd()}\n\n[features]\nfast_mode = true\n`;
-      }
-    }
-  }
-  const rendered = encodeLike(source, text);
-  const checked = parseConfig(rendered, `rendered role jarvis_${key}.toml`);
-  if (checked.model !== models[key].model || checked.model_reasoning_effort !== models[key].effort) {
-    fail(`Could not render model mapping for jarvis_${key}.`);
-  }
-  if (Object.hasOwn(models[key], 'fast')) {
-    const expectedTier = models[key].fast ? 'fast' : 'default';
-    if (checked.service_tier !== expectedTier || (models[key].fast && checked.features?.fast_mode !== true)) {
-      fail(`Could not render speed mapping for jarvis_${key}.`);
-    }
-  }
-  return rendered;
-}
 
 function walkFiles(root, prefix = '') {
   const result = [];
@@ -381,48 +195,24 @@ function walkFiles(root, prefix = '') {
 
 // Only this restrictive reviewer customization is supported. A trusted receipt and
 // an exact package/baseline match must explain every other byte.
-function renderReviewer(source, current, prior) {
-  const saved = prior.reviewerApprovalPolicy;
-  if (current === null) return saved === 'never'
-    ? Buffer.concat([Buffer.from('approval_policy = "never"\n'), source]) : source;
-  const role = parseConfig(current, 'agents/jarvis_reviewer.toml');
-  const priorHash = prior.owned.get('agents/jarvis_reviewer.toml');
-  if (!Object.hasOwn(role, 'approval_policy')) {
-    if (saved !== undefined) fail('Modified reviewer approval policy needs manual merge.');
-    return source;
-  }
-  if (role.approval_policy !== 'never' || role.sandbox_mode !== 'read-only' || !priorHash) {
-    fail('Unsupported reviewer customization needs manual merge.');
-  }
-  const text = decode(current);
-  const stripped = encodeLike(current, text.replace(/^[ \t]*approval_policy[ \t]*=[ \t]*"never"[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)/m, ''));
-  const bare = { ...role };
-  delete bare.approval_policy;
-  if (!isDeepStrictEqual(parseConfig(stripped, 'reviewer without approval policy'), bare)) {
-    fail('Reviewer approval policy syntax needs manual merge.');
-  }
-  const matchesPackage = stripped.equals(source);
-  const matchesReceipt = hash(stripped) === priorHash || (saved === 'never' && hash(current) === priorHash);
-  if (!matchesPackage && !matchesReceipt) fail('Modified reviewer file needs manual merge.');
-  return matchesPackage ? current : Buffer.concat([Buffer.from('approval_policy = "never"\n'), source]);
-}
 
-function desiredFiles(home, models, controllerEffortExplicit, prior) {
+function desiredFiles(home, models, controllerEffortExplicit, prior, adapter, assetsHome) {
   assertNoLinks(home, home);
   const files = new Map();
   let reviewerSnapshot = null;
-  for (const aggregate of ['config.toml', 'AGENTS.md']) {
+  for (const aggregate of adapter.id === 'codex' ? ['config.toml', adapter.instructions] : [adapter.instructions]) {
     const target = targetPath(home, aggregate);
     assertNoLinks(home, target);
     const before = existsSync(target) ? readFileSync(target) : Buffer.alloc(0);
     files.set(aggregate, aggregate === 'config.toml'
       ? patchConfig(before, models, controllerEffortExplicit)
-      : patchInstructions(before));
+      : patchInstructions(before, adapter, assetsHome));
   }
   for (const key of ROLE_KEYS) {
-    const relativePath = `agents/jarvis_${key}.toml`;
-    let rendered = renderRole(readFileSync(join(PAYLOAD, relativePath)), key, models);
-    if (key === 'reviewer') {
+    const relativePath = adapter.rolePath(key);
+    const source = readFileSync(join(PAYLOAD, `agents/jarvis_${key}.toml`));
+    let rendered = adapter.id === 'codex' ? renderRole(source, key, models) : renderNativeRole(adapter, key, source, models[key]);
+    if (key === 'reviewer' && adapter.id === 'codex') {
       const target = targetPath(home, relativePath);
       assertNoLinks(home, target);
       reviewerSnapshot = existsSync(target) ? readFileSync(target) : null;
@@ -434,19 +224,27 @@ function desiredFiles(home, models, controllerEffortExplicit, prior) {
     files.set(relativePath, readFileSync(join(PAYLOAD, ...relativePath.split('/'))));
   }
   if (!files.has('skills/jarvis-orchestrator/SKILL.md')) fail('Payload is missing the orchestration skill.');
+  files.set('jarvis-platform.json', Buffer.from(`${JSON.stringify({ version: 1, platform: adapter.id, assetsHome, instructions: adapter.instructions, capabilities: adapter.capabilities }, null, 2)}\n`));
   return { files, reviewerSnapshot };
 }
 
-function validateManifestShape(manifest, home, source, allowV1 = true) {
+function managedPaths(adapter) {
+  return new Set([...MANAGED_PATHS].filter(path => !['config.toml', 'AGENTS.md'].includes(path) && !path.startsWith('agents/'))
+    .concat(adapter.id === 'codex' ? ['config.toml', adapter.instructions] : [adapter.instructions], ROLE_KEYS.map(key => adapter.rolePath(key))));
+}
+
+function validateManifestShape(manifest, home, source, allowV1 = true, adapter = platformAdapter()) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) fail(`Invalid installation manifest: ${source}`);
-  if (![...(allowV1 ? [1] : []), 2, MANIFEST_VERSION].includes(manifest.version)) fail(`Unsupported installation manifest version: ${source}`);
+  if (![...(allowV1 ? [1] : []), 2, 3, MANIFEST_VERSION].includes(manifest.version)) fail(`Unsupported installation manifest version: ${source}`);
+  if (manifest.version < 4 ? adapter.id !== 'codex' || (manifest.platform !== undefined && manifest.platform !== 'codex') : manifest.platform !== adapter.id) fail('Installation manifest belongs to another platform.');
+  const allowedPaths = managedPaths(adapter);
   if (typeof manifest.home !== 'string' || resolve(manifest.home) !== home) fail('Previous installation manifest does not match target home.');
   if (!['installed', 'rolled-back'].includes(manifest.status) || !Array.isArray(manifest.files)) fail(`Incomplete installation manifest: ${source}`);
   const changedPaths = new Set();
   for (const record of manifest.files) {
     if (!record || typeof record !== 'object') fail(`Invalid installation manifest record: ${source}`);
     const clean = validateRelativePath(record.path);
-    if (!MANAGED_PATHS.has(clean)) fail(`Manifest contains an unmanaged path: ${clean}`);
+    if (!allowedPaths.has(clean)) fail(`Manifest contains an unmanaged path: ${clean}`);
     if (changedPaths.has(clean)) fail(`Manifest contains a duplicate path: ${clean}`);
     changedPaths.add(clean);
     if (record.before !== null && !/^[a-f0-9]{64}$/.test(record.before ?? '')) fail(`Invalid manifest checksum: ${source}`);
@@ -457,7 +255,7 @@ function validateManifestShape(manifest, home, source, allowV1 = true) {
     const ownedPaths = new Set();
     for (const record of manifest.ownedFiles) {
       const clean = validateRelativePath(record.path);
-      if (!MANAGED_PATHS.has(clean)) fail(`Manifest contains an unmanaged owned path: ${clean}`);
+      if (!allowedPaths.has(clean)) fail(`Manifest contains an unmanaged owned path: ${clean}`);
       if (ownedPaths.has(clean)) fail(`Manifest contains a duplicate owned path: ${clean}`);
       ownedPaths.add(clean);
       if (!/^[a-f0-9]{64}$/.test(record.sha256 ?? '')) fail(`Invalid owned checksum: ${source}`);
@@ -469,7 +267,7 @@ function validateManifestShape(manifest, home, source, allowV1 = true) {
   return manifest;
 }
 
-function readManifest(path, home, allowV1 = true) {
+function readManifest(path, home, allowV1 = true, adapter = platformAdapter()) {
   if (typeof path !== 'string' || !isAbsolute(path)) fail('Manifest paths must be absolute.');
   const absolute = resolve(path);
   if (!existsSync(absolute) || lstatSync(absolute).isSymbolicLink()) fail(`Manifest does not exist or is a symlink: ${absolute}`);
@@ -479,10 +277,10 @@ function readManifest(path, home, allowV1 = true) {
   } catch {
     fail(`Invalid installation manifest JSON: ${absolute}`);
   }
-  return validateManifestShape(manifest, home, absolute, allowV1);
+  return validateManifestShape(manifest, home, absolute, allowV1, adapter);
 }
 
-function newestOwnedManifest(home) {
+function newestOwnedManifest(home, adapter = platformAdapter()) {
   const state = targetPath(home, 'jarvis-state');
   if (!existsSync(state)) return undefined;
   assertNoLinks(home, state);
@@ -495,7 +293,7 @@ function newestOwnedManifest(home) {
       if (entry.isDirectory()) visit(full);
       else if (entry.isFile() && entry.name === 'manifest.json') {
         try {
-          const manifest = readManifest(full, home, false);
+          const manifest = readManifest(full, home, false, adapter);
           if (manifest.status === 'installed') candidates.push({ path: full, manifest, mtime: statSync(full).mtimeMs });
         } catch {
           // An unrelated or incomplete state file grants no ownership.
@@ -509,18 +307,19 @@ function newestOwnedManifest(home) {
 }
 
 function ownership(options, home) {
+  const adapter = platformAdapter(options.platform);
   const explicit = options.previousManifests;
   if (explicit !== undefined && !Array.isArray(explicit)) fail('previousManifests must be an array of absolute paths.');
   const selected = [];
   if (explicit?.length) {
     for (const path of explicit) {
       if (typeof path !== 'string' || !isAbsolute(path)) fail('previousManifests must contain absolute paths.');
-      const manifest = readManifest(path, home);
+      const manifest = readManifest(path, home, true, adapter);
       if (manifest.status !== 'installed') fail('A rolled-back manifest cannot grant upgrade ownership.');
       selected.push({ path: resolve(path), manifest });
     }
   } else {
-    const automatic = newestOwnedManifest(home);
+    const automatic = newestOwnedManifest(home, adapter);
     if (automatic) selected.push(automatic);
   }
   const owned = new Map();
@@ -550,14 +349,18 @@ function checkRoleCollisions(home, desired) {
 
 function plan(options) {
   const home = normalizeHome(options?.home);
+  const adapter = platformAdapter(options.platform);
+  const assetsHome = assetRoot(options);
   const prior = ownership(options, home);
-  const models = resolveModels(options.models, options.controllerEffort, prior.models ?? defaultModels);
+  const models = adapter.id === 'codex' ? resolveModels(options.models, options.controllerEffort, prior.models ?? defaultModels)
+    : nativeModels(adapter, options.models, prior.models, options.controllerEffort);
   const effortExplicit = options.controllerEffort !== undefined || options.models?.controller?.effort !== undefined;
-  const { files: desired, reviewerSnapshot } = desiredFiles(home, models, effortExplicit, prior);
+  const { files: desired, reviewerSnapshot } = desiredFiles(home, models, effortExplicit, prior, adapter, assetsHome);
   // Record the effective controller choice rather than a stale receipt default.
-  models.controller.effort = parseConfig(desired.get('config.toml')).model_reasoning_effort;
-  const reviewerApprovalPolicy = parseConfig(desired.get('agents/jarvis_reviewer.toml')).approval_policy;
-  checkRoleCollisions(home, desired);
+  if (adapter.id === 'codex') models.controller.effort = parseConfig(desired.get('config.toml')).model_reasoning_effort;
+  const reviewerApprovalPolicy = adapter.id === 'codex' ? parseConfig(desired.get('agents/jarvis_reviewer.toml')).approval_policy : undefined;
+  if (adapter.id === 'codex') checkRoleCollisions(home, desired);
+  else checkNativeRoleCollisions(adapter, home);
   const changes = [];
   for (const [relativePath, content] of desired) {
     const target = targetPath(home, relativePath);
@@ -569,7 +372,7 @@ function plan(options) {
     }
     if (before?.equals(content)) continue;
     const priorHash = prior.owned.get(relativePath);
-    const aggregate = relativePath === 'config.toml' || relativePath === 'AGENTS.md';
+    const aggregate = relativePath === 'config.toml' || relativePath === adapter.instructions;
     const preservedReviewer = relativePath === 'agents/jarvis_reviewer.toml' && reviewerApprovalPolicy === 'never';
     if (before !== null && hash(before) !== priorHash && !preservedReviewer) {
       if (aggregate && prior.owned.size) fail(`Modified aggregate file needs manual merge: ${relativePath}`);
@@ -581,27 +384,30 @@ function plan(options) {
     [...desired].some(([path, content]) => prior.owned.get(path) !== hash(content))
     || !isDeepStrictEqual(models, prior.models)
     || reviewerApprovalPolicy !== prior.reviewerApprovalPolicy);
-  return { home, models, desired, changes, ownershipRefresh, reviewerApprovalPolicy, priorManifests: prior.manifests };
+  return { home, assetsHome, adapter, models, desired, changes, ownershipRefresh, reviewerApprovalPolicy, priorManifests: prior.manifests };
 }
 
 export function audit(options = {}) {
   const prepared = plan(options);
   const selected = Object.fromEntries(Object.entries(prepared.models).map(([key, value]) => [key, { ...value }]));
-  const generatedConfig = parseConfig(prepared.desired.get('config.toml'), 'generated config.toml');
-  selected.controller.effort = generatedConfig.model_reasoning_effort;
-  if (['fast', 'priority'].includes(generatedConfig.service_tier)) selected.controller.fast = true;
-  else if (generatedConfig.service_tier === 'default') selected.controller.fast = false;
+  const generatedConfig = prepared.adapter.id === 'codex' ? parseConfig(prepared.desired.get('config.toml'), 'generated config.toml') : null;
+  if (generatedConfig) selected.controller.effort = generatedConfig.model_reasoning_effort;
+  if (['fast', 'priority'].includes(generatedConfig?.service_tier)) selected.controller.fast = true;
+  else if (generatedConfig?.service_tier === 'default') selected.controller.fast = false;
   return {
     status: 'validated-candidate',
     target: prepared.home,
+    platform: prepared.adapter.id,
+    assetsHome: prepared.assetsHome,
+    capabilities: prepared.adapter.capabilities,
     filesChanged: prepared.changes.length,
     files: [...prepared.desired].map(([path, content]) => ({ path, willChange: prepared.changes.some(change => change.relativePath === path), sha256: hash(content) })),
     ownershipManifests: prepared.priorManifests,
     ownershipRefresh: prepared.ownershipRefresh,
     models: selected,
-    serviceTier: generatedConfig.service_tier ?? null,
-    maxSubagents: Math.min(3, generatedConfig.agents.max_concurrent_threads_per_session),
-    codexMaxSubagents: generatedConfig.agents.max_concurrent_threads_per_session,
+    serviceTier: generatedConfig?.service_tier ?? null,
+    maxSubagents: generatedConfig ? Math.min(3, generatedConfig.agents.max_concurrent_threads_per_session) : 3,
+    ...(generatedConfig ? { codexMaxSubagents: generatedConfig.agents.max_concurrent_threads_per_session } : {}),
   };
 }
 
@@ -610,6 +416,8 @@ export function recommend(options = {}) {
   // Prefill from the same validated receipt selection used by audit/install.
   // Otherwise CLI and wizard defaults can override an explicit legacy receipt.
   const prior = ownership(options, home);
+  const adapter = platformAdapter(options.platform);
+  if (adapter.id !== 'codex') return { target: home, platform: adapter.id, models: nativeModels(adapter, options.models, prior.models, options.controllerEffort), serviceTier: null };
   let base = prior.models ?? defaultModels;
   const configPath = targetPath(home, 'config.toml');
   let serviceTier = null;
@@ -675,11 +483,11 @@ export function install(options = {}) {
   installLocks.add(home);
   try {
     const preview = plan(options);
-    if (preview.changes.length === 0 && !preview.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home };
+    if (preview.changes.length === 0 && !preview.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home, platform: preview.adapter.id, assetsHome: preview.assetsHome };
     const releaseLock = acquireOperationLock(home);
     try {
       const prepared = plan(options);
-      if (prepared.changes.length === 0 && !prepared.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home };
+      if (prepared.changes.length === 0 && !prepared.ownershipRefresh) return { status: 'already-installed', filesChanged: 0, target: home, platform: prepared.adapter.id, assetsHome: prepared.assetsHome };
       const state = targetPath(home, 'jarvis-state');
       const backup = join(state, 'backups', `${new Date().toISOString().replaceAll(/[-:.]/g, '')}-${randomUUID()}`);
       assertNoLinks(home, state);
@@ -698,10 +506,11 @@ export function install(options = {}) {
       const manifest = {
       version: MANIFEST_VERSION,
       package: PACKAGE,
+      platform: prepared.adapter.id,
       home,
       status: 'prepared',
       createdAt: new Date().toISOString(),
-      settings: { models: prepared.models,
+      settings: { models: prepared.models, assetsHome: prepared.assetsHome,
         ...(prepared.reviewerApprovalPolicy ? { reviewerApprovalPolicy: prepared.reviewerApprovalPolicy } : {}) },
       previousManifests: prepared.priorManifests,
       files: records,
@@ -738,7 +547,8 @@ export function install(options = {}) {
         restorePartial(written);
         throw error;
       }
-      return { status: 'installed', target: home, filesChanged: prepared.changes.length, manifest: manifestPath };
+      return { status: 'installed', platform: prepared.adapter.id, assetsHome: prepared.assetsHome, target: home, filesChanged: prepared.changes.length, manifest: manifestPath,
+        activation: prepared.adapter.capabilities.activation, runtimeVerification: 'not-performed' };
     } finally {
       releaseLock();
     }
@@ -747,8 +557,8 @@ export function install(options = {}) {
   }
 }
 
-function planRollback(home, manifestPath) {
-  const manifest = readManifest(manifestPath, home);
+function planRollback(home, manifestPath, adapter) {
+  const manifest = readManifest(manifestPath, home, true, adapter);
   const backupRoot = join(dirname(resolve(manifestPath)), 'original');
   const restores = [];
   for (const record of manifest.files) {
@@ -772,12 +582,13 @@ function planRollback(home, manifestPath) {
 
 export function rollback(options = {}) {
   const home = normalizeHome(options?.home);
+  const adapter = platformAdapter(options.platform);
   const manifestPath = options.manifest;
   if (typeof manifestPath !== 'string' || !isAbsolute(manifestPath)) fail('rollback requires an absolute manifest path.');
-  planRollback(home, manifestPath);
+  planRollback(home, manifestPath, adapter);
   const releaseLock = acquireOperationLock(home);
   try {
-    const { manifest, restores } = planRollback(home, manifestPath);
+    const { manifest, restores } = planRollback(home, manifestPath, adapter);
     for (const item of restores) {
       assertNoLinks(home, item.target);
       const current = existsSync(item.target) ? hash(readFileSync(item.target)) : null;
@@ -790,7 +601,7 @@ export function rollback(options = {}) {
       manifest.rolledBackAt = new Date().toISOString();
       atomicWrite(resolve(manifestPath), Buffer.from(JSON.stringify(manifest, null, 2)), 0o600);
     }
-    return { status: 'rolled-back', target: home, filesRestored: restores.length, manifest: resolve(manifestPath) };
+    return { status: 'rolled-back', platform: adapter.id, target: home, filesRestored: restores.length, manifest: resolve(manifestPath) };
   } finally {
     releaseLock();
   }
@@ -802,9 +613,16 @@ function checkResult(name, ok, message, path = undefined) {
 
 export function doctor(options = {}) {
   const home = normalizeHome(options?.home);
-  const manifestInfo = newestOwnedManifest(home);
+  const adapter = platformAdapter(options.platform);
+  if (adapter.id !== 'codex') return nativeDoctor(options, adapter);
+  const manifestInfo = newestOwnedManifest(home, adapter);
   const expectedModels = resolveModels(undefined, undefined, manifestInfo?.manifest?.settings?.models ?? defaultModels);
   const checks = [];
+  const bindingPath = targetPath(home, 'jarvis-platform.json');
+  if (manifestInfo?.manifest.version >= 4) {
+    const expectedHash = manifestInfo.manifest.ownedFiles.find(file => file.path === 'jarvis-platform.json')?.sha256;
+    checks.push(checkResult('platform-binding', existsSync(bindingPath) && hash(readFileSync(bindingPath)) === expectedHash, 'Platform binding must match its installation receipt.', 'jarvis-platform.json'));
+  }
   const configPath = targetPath(home, 'config.toml');
   if (!existsSync(configPath)) {
     checks.push(checkResult('config', false, 'config.toml is not installed.', 'config.toml'));
@@ -871,7 +689,7 @@ export function doctor(options = {}) {
       const instructions = decode(raw);
       const markersOk = instructions.split(START).length - 1 === 1 && instructions.split(END).length - 1 === 1
         && instructions.indexOf(START) < instructions.indexOf(END);
-      instructionsOk = markersOk && raw.equals(patchInstructions(raw));
+      instructionsOk = markersOk && raw.equals(patchInstructions(raw, adapter, assetRoot(options)));
     } catch {
       instructionsOk = false;
     }
@@ -886,6 +704,7 @@ export function doctor(options = {}) {
     ['employee-card', 'skills/jarvis-orchestrator/references/employee-card.md'],
     ['assets', 'skills/jarvis-orchestrator/references/assets.md'],
     ['domains', 'skills/jarvis-orchestrator/references/domains.md'],
+    ['platform', 'skills/jarvis-orchestrator/references/platform.md'],
   ]) {
     const skillPath = targetPath(home, relativePath);
     let skillOk = false;
@@ -902,9 +721,39 @@ export function doctor(options = {}) {
     status: ok ? 'healthy' : (manifestInfo ? 'misconfigured' : 'not-installed'),
     ok,
     target: home,
+    platform: adapter.id,
+    assetsHome: assetRoot(options),
+    capabilities: adapter.capabilities,
     checks,
     staticValidation: ok ? 'healthy' : (manifestInfo ? 'drift-detected' : 'not-installed'),
     runtimeVerification: 'not-performed',
     runtimeNote: 'This check does not prove that native Jarvis roles are callable in the current runtime.',
   };
+}
+
+function nativeDoctor(options, adapter) {
+  const home = normalizeHome(options.home);
+  const prior = ownership(options, home);
+  const assetsHome = assetRoot(options);
+  const models = nativeModels(adapter, undefined, prior.models);
+  const checks = [];
+  try {
+    checkNativeRoleCollisions(adapter, home);
+    const expected = desiredFiles(home, models, false, prior, adapter, assetsHome).files;
+    for (const [path, content] of expected) {
+      let ok = false;
+      try {
+        const target = targetPath(home, path);
+        assertNoLinks(home, target);
+        ok = existsSync(target) && readFileSync(target).equals(content);
+        if (path === 'jarvis-platform.json' && prior.owned.size) ok = ok && hash(content) === prior.owned.get(path);
+        if (path.startsWith('agents/')) readExecutionProfile(adapter, home, path.match(/jarvis-(.+)\.md$/)[1]);
+      } catch { ok = false; }
+      checks.push(checkResult(path, ok, ok ? 'Managed file matches the platform payload and settings.' : 'Managed file is missing or has drifted.', path));
+    }
+  } catch (error) { checks.push(checkResult('configuration', false, error.message)); }
+  const ok = checks.every(check => check.ok);
+  return { status: ok ? 'healthy' : prior.manifests.length ? 'misconfigured' : 'not-installed', ok, target: home, platform: adapter.id, assetsHome, checks,
+    capabilities: adapter.capabilities, staticValidation: ok ? 'healthy' : 'drift-detected', runtimeVerification: 'not-performed',
+    runtimeNote: 'Static files do not prove client loading, model availability, effective permissions or dispatch. Client version and account policy must be verified separately.' };
 }

@@ -314,8 +314,7 @@ test('install renders CRLF package roles as valid consistent TOML', async () => 
   const { root, home } = fixture();
   const packageRoot = join(root, 'crlf-package');
   mkdirSync(join(packageRoot, 'src'), { recursive: true });
-  cpSync(join(process.cwd(), 'src/installer.mjs'), join(packageRoot, 'src/installer.mjs'));
-  cpSync(join(process.cwd(), 'src/profiles.mjs'), join(packageRoot, 'src/profiles.mjs'));
+  cpSync(join(process.cwd(), 'src'), join(packageRoot, 'src'), { recursive: true });
   cpSync(join(process.cwd(), 'payload'), join(packageRoot, 'payload'), { recursive: true });
   const payloadRole = join(packageRoot, 'payload/agents/jarvis_luna.toml');
   writeFileSync(payloadRole, readFileSync(payloadRole, 'utf8').replace(/\r?\n/g, '\r\n'));
@@ -458,7 +457,7 @@ test('reviewer never and effective controller effort refresh ownership without c
   assert.equal(refreshed.filesChanged, 0);
   assert.equal(refreshed.status, 'installed');
   const receipt = JSON.parse(readFileSync(refreshed.manifest, 'utf8'));
-  assert.equal(receipt.version, 3);
+  assert.equal(receipt.version, 4);
   assert.deepEqual(receipt.files, []);
   assert.equal(receipt.settings.reviewerApprovalPolicy, 'never');
   assert.equal(receipt.settings.models.controller.effort, 'ultra');
@@ -488,7 +487,7 @@ test('reviewer customization survives distinct payload upgrade, rollback and re-
   const refreshReceipt = readFileSync(refreshed.manifest);
   const packageRoot = join(root, 'next-payload');
   mkdirSync(join(packageRoot, 'src'), { recursive: true });
-  for (const file of ['installer.mjs', 'profiles.mjs']) cpSync(join(process.cwd(), 'src', file), join(packageRoot, 'src', file));
+  cpSync(join(process.cwd(), 'src'), join(packageRoot, 'src'), { recursive: true });
   cpSync(join(process.cwd(), 'payload'), join(packageRoot, 'payload'), { recursive: true });
   const nextRole = join(packageRoot, 'payload/agents/jarvis_reviewer.toml');
   writeFileSync(nextRole, readFileSync(nextRole, 'utf8').replace('developer_instructions = """', 'developer_instructions = """\nNext package reviewer policy.'));
@@ -556,7 +555,7 @@ test('already synchronized package guidance gains fresh ownership without rewrit
   const oldReceipt = readFileSync(initial.manifest);
   const packageRoot = join(root, 'synced-payload');
   mkdirSync(join(packageRoot, 'src'), { recursive: true });
-  for (const file of ['installer.mjs', 'profiles.mjs']) cpSync(join(process.cwd(), 'src', file), join(packageRoot, 'src', file));
+  cpSync(join(process.cwd(), 'src'), join(packageRoot, 'src'), { recursive: true });
   cpSync(join(process.cwd(), 'payload'), join(packageRoot, 'payload'), { recursive: true });
   const skill = 'skills/jarvis-orchestrator/SKILL.md';
   const newSkill = readFileSync(join(packageRoot, 'payload', skill), 'utf8') + '\nNew package guidance.\n';
@@ -566,7 +565,9 @@ test('already synchronized package guidance gains fresh ownership without rewrit
   const newBlock = readFileSync(blockPath, 'utf8').replace('<!-- JARVIS_END -->', 'New package contract.\n<!-- JARVIS_END -->');
   writeFileSync(blockPath, newBlock);
   const agents = join(home, 'AGENTS.md');
-  const newAgents = readFileSync(agents, 'utf8').replace(/<!-- JARVIS_START -->[\s\S]*<!-- JARVIS_END -->/, newBlock.trim());
+  const oldAgents = readFileSync(agents, 'utf8');
+  const bindingNote = oldAgents.match(/\nJarvis platform:[^\n]+\n/)[0];
+  const newAgents = oldAgents.replace(/<!-- JARVIS_START -->[\s\S]*<!-- JARVIS_END -->/, newBlock.trim().replace('<!-- JARVIS_END -->', `${bindingNote}<!-- JARVIS_END -->`));
   writeFileSync(agents, newAgents);
   const next = await import(pathToFileURL(join(packageRoot, 'src/installer.mjs')).href);
   assert.equal(next.audit({ home }).filesChanged, 0);
@@ -595,7 +596,7 @@ test('recognized reviewer setting never authorizes unrelated skill or managed-in
 });
 
 
-test('v2 ownership receipts remain readable and refresh to v3 without editing old records', () => {
+test('v2 ownership receipts remain readable and refresh to v4 without editing old records', () => {
   const { home } = fixture();
   const initial = install({ home });
   const legacy = JSON.parse(readFileSync(initial.manifest, 'utf8'));
@@ -606,7 +607,7 @@ test('v2 ownership receipts remain readable and refresh to v3 without editing ol
   writeFileSync(reviewer, 'approval_policy = "never"\n' + readFileSync(reviewer, 'utf8'));
   const fresh = install({ home });
   const current = JSON.parse(readFileSync(fresh.manifest, 'utf8'));
-  assert.equal(current.version, 3);
+  assert.equal(current.version, 4);
   assert.equal(current.settings.reviewerApprovalPolicy, 'never');
   assert.deepEqual(readFileSync(initial.manifest), legacyBytes);
   assert.equal(doctor({ home }).ok, true);

@@ -251,7 +251,7 @@ test('CLI invalid QMD flags and destination fail before installing Jarvis', t =>
     ['install', '--yes', '--qmd', '--qmd-dir', dir, '--qmd-device', 'cuda'],
     ['install', '--yes', '--qmd', '--qmd-dir', join(home, 'qmd')],
   ]) {
-    const result = spawnSync(process.execPath, [cli, ...args, '--home', home, '--json'], { encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [cli, ...args, '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], { encoding: 'utf8' });
     assert.equal(result.status, 1, result.stdout);
     assert.equal(existsSync(home), false);
     assert.equal(existsSync(dir), false);
@@ -266,7 +266,7 @@ test('CLI manager failure returns partial with installed controller and preserve
   writeFileSync(connection, original);
   const hook = join(root, 'runner.cjs');
   writeFileSync(hook, `const cp = require('node:child_process'); const original = cp.spawnSync; cp.spawnSync = (command, args, options) => args.includes('${QMD_PACKAGE}') ? { status: 1, stderr: 'Synthetic package manager failure' } : original(command, args, options); require('node:module').syncBuiltinESMExports();`);
-  const result = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--qmd', '--qmd-dir', dir, '--home', home, '--json'], { encoding: 'utf8', timeout: 20000 });
+  const result = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--qmd', '--qmd-dir', dir, '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], { encoding: 'utf8', timeout: 20000 });
   assert.equal(result.status, 1, result.stderr);
   const partial = JSON.parse(result.stdout);
   assert.equal(partial.status, 'partial');
@@ -275,7 +275,7 @@ test('CLI manager failure returns partial with installed controller and preserve
   assert.equal(existsSync(partial.manifest), true);
   assert.equal(existsSync(join(home, 'config.toml')), true);
   assert.equal(readFileSync(connection, 'utf8'), original);
-  const upgraded = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--home', home, '--json'], { encoding: 'utf8', timeout: 20000 });
+  const upgraded = spawnSync(process.execPath, ['--require', hook, cli, 'install', '--yes', '--home', home, '--assets-home', join(home, 'jarvis'), '--json'], { encoding: 'utf8', timeout: 20000 });
   assert.equal(upgraded.status, 0, upgraded.stderr);
   assert.equal(JSON.parse(upgraded.stdout).status, 'already-installed');
   assert.equal(readFileSync(connection, 'utf8'), original);

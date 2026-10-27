@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- Update `smol-toml` to 1.9.1 to fix quadratic parsing complexity for valid TOML described in [GHSA-r4xh-jqrq-34v2](https://github.com/advisories/GHSA-r4xh-jqrq-34v2).
+
+- Add independent Codex, WorkBuddy, Claude Code and Cursor configuration adapters, selected with `--platform`, while keeping each client's models, permissions and account connections separate.
+- Share employee cards, approved experience, knowledge, resources and preferences through `--assets-home` / `JARVIS_HOME` and saved platform bindings. Reuse existing Codex libraries in place, default new libraries to `~/.jarvis`, and reject ambiguous existing roots.
+- Generate each platform's native profiles and skill/instruction entrypoints; retain the Codex default and `--home` compatibility. Use explicit skill activation for Cursor rather than assuming user-level rule files load automatically.
+- Extend audit, install, doctor, planning, portable assets and manifest-based rollback across the adapters, with platform-bound schema-4 receipts and legacy Codex receipt support. Reject native identity collisions, ancestor links and invalid stored model settings.
+- Keep requested settings separate from effective runtime evidence, and distinguish Reviewer tool restrictions from filesystem read-only enforcement. Automated adaptation/shared-library checks and scoped independent review passed; WorkBuddy and Claude real installations passed static doctor checks, while live employee invocation remains unverified. Remaining live-client checks were skipped at the owner's request; Cursor was not installed or invoked.
+
 ## 0.1.7
 
 - Recover the applicable current rules, recognized templates or accepted examples, and actual consumer constraints for repeated deliverables. Use the same delivery contract during execution and acceptance without adding routine rereads, full-library scans, new ledgers or automatic memory updates.
