@@ -1,6 +1,6 @@
 {
   "name": "open-jarvis",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Install Jarvis workflows for Codex, WorkBuddy, Claude Code and Cursor with shared employee and experience assets.",
   "type": "module",
   "bin": { "open-jarvis": "bin/open-jarvis.mjs" },

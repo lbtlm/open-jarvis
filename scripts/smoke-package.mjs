@@ -97,7 +97,12 @@ try {
   assert.equal(invoke('install', '--starter', 'writing', '--yes').status, 'already-installed');
   assert.equal(invoke('employees', '--query', 'writing').employees.length, 1);
   assert.equal(invoke('employees', '--init', '--yes').created.length, 4);
-  assert.equal(invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'simple').requested.effort, 'low');
+  const simplePlan = invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'simple');
+  assert.equal(simplePlan.requested.model, 'gpt-6.1-terra');
+  assert.equal(simplePlan.requested.effort, 'high');
+  assert.equal(invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'standard').role, 'jarvis_simple');
+  assert.equal(invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'investigation').requested.model, 'gpt-6.1-sol');
+  assert.equal(invoke('plan', '--employee', 'atlas-backend', '--difficulty', 'light', '--risk', 'critical').role, 'jarvis_sol');
   const candidate = join(scratch, 'experience-candidate.md');
   const proposal = invoke('experience', 'propose', '--id', 'package-smoke', '--title', 'Synthetic package evidence',
     '--scope', 'personal', '--contributor', 'Package smoke', '--out', candidate);

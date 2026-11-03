@@ -11,12 +11,14 @@ The underscore names in the common routing table are logical profile keys. Codex
 | Lane | Logical key / Codex native name | WorkBuddy, Claude Code, Cursor native name |
 | --- | --- | --- |
 | Micro / Light | `jarvis_luna` | `jarvis-luna` |
-| Simple | `jarvis_simple` | `jarvis-simple` |
-| Standard | `jarvis_terra` | `jarvis-terra` |
+| Simple / Standard daily execution | `jarvis_simple` | `jarvis-simple` |
+| Investigation / design | `jarvis_terra` | `jarvis-terra` |
 | Complex | `jarvis_sol` | `jarvis-sol` |
 | Reviewer | `jarvis_reviewer` | `jarvis-reviewer` |
 
 Dispatch using the actual native name returned by `plan` for the selected platform, not the logical key copied from the common routing table. A compatibility fallback reads that platform's native profile format; only Codex profiles are TOML. Codex fresh installations recommend Astra / High for the controller, while preserving installed user selections. This recommendation does not apply to other clients.
+
+Fresh Codex role recommendations are Luna / Medium for Micro/Light, GPT-6.1 Terra / High for daily execution, and GPT-6.1 Sol / Medium for Investigation and the generic subagent fallback. Complex and Reviewer retain Sol / High. Critical risk selects Complex before difficulty; reviewer cards remain Reviewer. These are defaults, not forced replacements for installed user mappings. Other clients inherit their own native models/effort. Terra XHigh is a task-specific explicit override requiring compatible runtime binding; no extra permanent role or global Ultra/Fast setting is introduced.
 
 Reviewer controls differ: Codex requests a read-only sandbox; Cursor requests `readonly: true`; Claude Code and WorkBuddy restrict the reviewer to Read, Grep and Glob. Tool restrictions and permissionMode are not a filesystem sandbox. Independently verify the actual runtime controls, including shell, connectors and inherited permissions. When a task requires a guarantee that cannot be demonstrated, block that delegation and report the missing capability. Never replace this check with a prompt asserting read-only operation.
 
