@@ -194,6 +194,7 @@ test('CODEX_HOME install, idempotence and rollback preserve original user settin
   assert.equal(config.model_reasoning_effort, 'ultra');
   assert.equal(config.approval_policy, 'on-request');
   assert.equal(config.agents.default_subagent_model, 'gpt-6.1-sol');
+  assert.equal(config.agents.default_subagent_reasoning_effort, 'medium');
   assert.equal(json(run(home, 'install', '--yes', '--json')).status, 'already-installed');
   assert.equal(json(run(home, 'doctor', '--json')).ok, true);
   json(run(home, 'rollback', '--manifest', result.manifest, '--json'));

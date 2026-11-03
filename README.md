@@ -25,10 +25,10 @@ Open Jarvis brings a controller-supervised workflow to **Codex, WorkBuddy, Claud
 
 Requires **Node.js 22+** (npm/npx included) and a client supporting the native configuration described in the [multi-platform guide (English)](docs/multi-platform.md). Live model calls require that client's sign-in and access. The default is Codex; add `--platform workbuddy`, `--platform claude-code` or `--platform cursor` for another client.
 
-Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.2.0**; its download URL is available once that Release is public. Update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
+Choose a published version from [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases). The commands below use **0.2.1**; its download URL is available once that Release is public. Update the version, URL and filename together. If that artifact is unavailable, use a reviewed local tarball as shown below.
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis install
 ```
 
 **Codex setup in the terminal wizard:** controller and worker models, reasoning effort, Fast, and an employee starter. The starter defaults to `none`, so you can begin with the collaboration rules and add specialists as needed. Existing preferences take priority; fresh installs recommend Astra / High for the controller. Fast is separate and defaults to off. Ultra and a switch to Sol are never enabled automatically.
@@ -37,14 +37,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open
 <summary>pnpm alternative and reviewed local packages</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz dlx open-jarvis install
 ```
 
 For a reviewed tarball in your current directory, use either runner:
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.2.1.tgz dlx open-jarvis install
 ```
 
 Both runners use the same selected platform home and shared asset root. The package is distributed through GitHub Releases, **not the npm registry**; dependencies may still come from npm, so installation is not necessarily offline. `--home` selects the native platform home. Codex retains `CODEX_HOME` and `~/.codex` defaults; shared assets use `--assets-home`, `JARVIS_HOME` or the saved binding. See the [root selection rules](docs/multi-platform.md#choose-the-asset-root). `--yes` is noninteractive and preserves existing preferences. pnpm **10.18.1** has been tested locally on Windows; see [compatibility (English)](docs/compatibility.md).
@@ -107,13 +107,13 @@ The following are **Codex recommendations**. WorkBuddy, Claude Code and Cursor p
 | --- | --- | --- |
 | `controller` | GPT-6 Astra / High | Coordination, supervision and final acceptance |
 | `luna` | GPT-6 Luna / Medium | Clear, small tasks with low risk |
-| `simple` | GPT-6.1 Sol / Low | Simple implementations with known mechanisms |
-| `terra` | GPT-6.1 Sol / Medium | Routine tasks and scoped investigation of unknown failures |
+| `simple` | GPT-6.1 Terra / High | Daily implementation and reproducible bugs with clear contracts |
+| `terra` | GPT-6.1 Sol / Medium | Investigation, requirement clarification and cross-module design |
 | `sol` | GPT-6.1 Sol / High | Contract changes, complex semantics or critical behavior |
 | `reviewer` | GPT-6.1 Sol / High | Independent review triggered by risk or evidence |
 
-These are recommendations; existing user choices take priority. `terra` is a compatibility key, not a GPT-6 Terra product.
-Assess difficulty by actual impact and risk: `micro` for tiny changes, `light`/`simple` for small work, `standard` for routine work, and `complex` for major or consequential work. One suitable employee normally completes investigation, implementation and verification; no mandatory Luna scan or read/implement relay is needed. Each implementation reuses suitable code, consolidates related duplication, edits in place, removes superseded logic and adds only what is needed. Related obsolete code may be cleaned up within scope; behavior checks take priority over line-count reductions.
+These are recommendations; existing user choices take priority. `simple` and `terra` remain compatibility role keys; their names do not determine the actual model. Use the table above or the installed configuration.
+Assess difficulty by actual impact and risk: `micro` for tiny changes, `light` for explicit low-risk work, `simple`/`standard` for daily execution, `investigation` for uncertain mechanisms/design, and `complex` for critical multi-constraint work. Standard uses the daily `simple` profile; critical risk selects `sol` first, while reviewer cards remain Reviewer. Explicit noncritical multi-constraint tasks may select Standard with `--effort xhigh`; user mappings and explicit effort choices remain authoritative, and runtime binding is required. One suitable employee normally completes investigation, implementation and verification; no mandatory Luna scan or read/implement relay is needed. Each implementation reuses suitable code, consolidates related duplication, edits in place, removes superseded logic and adds only what is needed. Related obsolete code may be cleaned up within scope; behavior checks take priority over line-count reductions.
 Fast is selected separately from model and effort. Model access, permissions and service settings require runtime verification.
 The default is one executor. At most three subagents run concurrently, including Reviewer and excluding the controller, subject to lower user or global limits.
 Executors do not delegate recursively. Independent review is triggered by specified risks or evidence, rather than required for every task.
@@ -137,9 +137,9 @@ The older `employees --init --yes` command remains compatible and defaults to ad
 For example, preview writing candidates before explicitly writing them:
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` is a placeholder skill ID. Replace it with an existing skill; a missing skill blocks the plan.
@@ -158,10 +158,10 @@ An employee card is a file asset, not a resident process. See [employee conventi
 The entries below are **command suffixes**, not standalone shell commands. Append one to the full runner prefix:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis
 ```
 
-For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.2.0.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis` and keep the suffix unchanged.
+For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz dlx open-jarvis` as the prefix. With a reviewed local package, use `npx --package ./open-jarvis-0.2.1.tgz open-jarvis` or `pnpm --package=./open-jarvis-0.2.1.tgz dlx open-jarvis` and keep the suffix unchanged.
 
 | Command suffix | Purpose |
 | --- | --- |
@@ -177,12 +177,12 @@ For every suffix, you can instead use `pnpm --package=https://github.com/lbtlm/o
 For example, run the static check with:
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` is a placeholder; replace it with the actual installation manifest.
 `--platform codex|workbuddy|claude-code|cursor` selects the adapter; `--home PATH` selects its native home; `--assets-home PATH` selects the shared personal library; `--project PATH` explicitly selects project assets; `--json` returns machine-readable output.
-Use `npx --package ./open-jarvis-0.2.0.tgz open-jarvis --help` for all options.
+Use `npx --package ./open-jarvis-0.2.1.tgz open-jarvis --help` for all options.
 `audit` and `doctor` make no live model requests and do not prove an employee has run.
 
 <a id="assets"></a>
@@ -199,7 +199,7 @@ Scores, retrospectives and statistics are not compulsory after every task. See [
 **Optional QMD installation:** default `install` does not download QMD and preserves existing QMD environments and connections. The interactive wizard offers QMD installation with npm or pnpm, an installation directory and `auto` or `cpu` device selection; it invokes the package manager only after final confirmation. Use this noninteractive command for Codex:
 
 ```sh
-npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 Replace the package and absolute directory paths; `--qmd-manager pnpm` is also supported. This installs the engine and platform native packages. It does not download models, build indexes, install drivers or install the full CUDA Toolkit. Semantic retrieval needs models and an index of approved assets. GPU detection and CPU fallback follow QMD; installed packages do not prove CUDA works, and Windows may need an optional cuBLAS runtime. A QMD failure is reported as partial installation while Jarvis may remain installed. See [QMD details (English)](docs/experience.md).
@@ -214,10 +214,10 @@ Skill lookup uses the selected platform's project skills, project `.agents/skill
 Repeated `--skill-root PATH` options completely replace the default export-root list.
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
 ```
 
 For project assets, explicitly pass `--project` on both source export and destination import, using each machine's project path.

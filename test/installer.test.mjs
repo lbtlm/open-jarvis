@@ -19,6 +19,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
 import { audit, defaultModels, doctor, install, recommend, rollback } from '../src/installer.mjs';
+import { resolveModels } from '../src/platforms/codex.mjs';
 
 const roots = new Set();
 
@@ -57,6 +58,76 @@ test('unsupported GPT-6 efforts fail without writes, including inherited control
   assert.throws(() => install({home, models:{controller:{model:'gpt-6-luna'}}}), /choose a supported effort explicitly/);
   assert.equal(readFileSync(join(home,'config.toml'),'utf8'), original);
   assert.equal(existsSync(join(home,'AGENTS.md')), false);
+});
+
+test('explicit Codex Terra mapping supports its native effort range and preserves other roles', () => {
+  for (const effort of ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']) {
+    assert.equal(resolveModels({ simple: { model: 'gpt-6.1-terra', effort } }).simple.effort, effort);
+  }
+  const { home } = fixture();
+  for (const effort of ['none', 'minimal']) {
+    assert.throws(() => install({ home, models: { simple: { model: 'gpt-6.1-terra', effort } } }), /does not support Codex effort/);
+    assert.equal(existsSync(home), false);
+  }
+  install({ home, models: { simple: { model: 'gpt-6.1-terra', effort: 'high', fast: false } } });
+  const installed = parseToml(readFileSync(join(home, 'agents/jarvis_simple.toml'), 'utf8'));
+  assert.equal(installed.model, 'gpt-6.1-terra');
+  assert.equal(installed.model_reasoning_effort, 'high');
+  assert.equal(installed.service_tier, 'default');
+  assert.equal(doctor({ home }).ok, true);
+  const choices = recommend({ home }).models;
+  for (const key of ['controller', 'luna', 'terra', 'sol', 'reviewer']) assert.deepEqual(choices[key], defaultModels[key]);
+  assert.equal(install({ home }).status, 'already-installed');
+});
+
+test('daily Terra execution upgrade preserves Sol fallback, inherited speed and the installed controller', () => {
+  const { home } = fixture();
+  mkdirSync(home);
+  writeFileSync(join(home, 'config.toml'), 'model = "gpt-6-astra"\nmodel_reasoning_effort = "ultra"\nservice_tier = "default"\napproval_policy = "on-request"\nsandbox_mode = "workspace-write"\n\n[agents]\nmax_concurrent_threads_per_session = 3\n\n[features]\nfast_mode = true\n');
+  const personal = join(home, 'jarvis/employees/personal.md');
+  mkdirSync(dirname(personal), { recursive: true });
+  writeFileSync(personal, 'Preserve this user-owned employee card.');
+  install({ home, models: {
+    controller: { model: 'gpt-6-astra', effort: 'ultra', fast: false },
+    simple: { model: 'gpt-6.1-sol', effort: 'low', fast: false },
+    terra: { model: 'gpt-6.1-sol', effort: 'medium' },
+  } });
+  assert.equal(install({ home }).status, 'already-installed');
+  const prior = recommend({ home }).models;
+  const priorConfig = readFileSync(join(home, 'config.toml'));
+  assert.equal(prior.simple.model, 'gpt-6.1-sol');
+  assert.equal(prior.terra.model, 'gpt-6.1-sol');
+  const models = {
+    simple: { model: 'gpt-6.1-terra', effort: 'high', fast: false },
+  };
+  const updated = install({ home, models });
+  assert.equal(updated.status, 'installed');
+  const after = recommend({ home }).models;
+  for (const key of ['controller', 'luna', 'terra', 'sol', 'reviewer']) assert.deepEqual(after[key], prior[key]);
+  assert.deepEqual(after.simple, models.simple);
+  assert.equal(Object.hasOwn(after.terra, 'fast'), false);
+  const config = parseToml(readFileSync(join(home, 'config.toml'), 'utf8'));
+  assert.deepEqual(readFileSync(join(home, 'config.toml')), priorConfig);
+  assert.equal(config.approval_policy, 'on-request');
+  assert.equal(config.sandbox_mode, 'workspace-write');
+  assert.equal(config.features.fast_mode, true);
+  assert.equal(config.model, 'gpt-6-astra');
+  assert.equal(config.model_reasoning_effort, 'ultra');
+  assert.equal(config.service_tier, 'default');
+  assert.equal(config.agents.max_concurrent_threads_per_session, 3);
+  assert.equal(config.agents.default_subagent_model, 'gpt-6.1-sol');
+  assert.equal(config.agents.default_subagent_reasoning_effort, 'medium');
+  const standard = parseToml(readFileSync(join(home, 'agents/jarvis_terra.toml'), 'utf8'));
+  assert.equal(standard.model, 'gpt-6.1-sol');
+  assert.equal(standard.model_reasoning_effort, 'medium');
+  assert.equal(Object.hasOwn(standard, 'service_tier'), false);
+  assert.equal(doctor({ home }).ok, true);
+  assert.equal(audit({ home, models }).filesChanged, 0);
+  assert.equal(install({ home, models }).status, 'already-installed');
+  rollback({ home, manifest: updated.manifest });
+  assert.deepEqual(recommend({ home }).models, prior);
+  assert.deepEqual(readFileSync(join(home, 'config.toml')), priorConfig);
+  assert.equal(readFileSync(personal, 'utf8'), 'Preserve this user-owned employee card.');
 });
 
 test('employee guidance is managed while retained cards and external skills stay user-owned', () => {

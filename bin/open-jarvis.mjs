@@ -33,9 +33,9 @@ Options:
   --query WORDS              Filter employee names, professions and keywords
   --init                     Preview missing starter employee cards
   --employee ID              Saved employee for plan
-  --difficulty LEVEL         micro|light|simple|standard|complex
+  --difficulty LEVEL         micro|light|simple|standard|investigation|complex
   --effort LEVEL             Task effort override for plan; defaults to installed effort
-  --risk LEVEL               normal|critical (critical requests independent review)
+  --risk LEVEL               normal|critical (critical selects Complex and requests review)
   --skill ID                 Local task skill; card or temporary binding (repeatable)
   --experience SCOPE:ID[@SHA256]  Select current approved experience for plan (repeatable)
   --format markdown          Render plan as reviewable Markdown; exclusive with --json

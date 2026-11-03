@@ -91,11 +91,11 @@ export function listEmployees({ home, assetsHome, project, query = '' }) {
 
 export function planTask({ home, assetsHome, platform = 'codex', project, employee, difficulty, effort, risk = 'normal', skills = [], experiences = [] }) {
   const adapter = platformAdapter(platform);
-  if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: micro, light, simple, standard or complex. Direct work does not need a dispatch plan.');
+  if (!Object.hasOwn(difficultyRoles, difficulty)) throw new Error('Choose difficulty: micro, light, simple, standard, investigation or complex. Direct work does not need a dispatch plan.');
   if (!['normal', 'critical'].includes(risk)) throw new Error('Choose risk: normal or critical.');
   const card = listEmployees({ home, assetsHome, project }).find(c => c.id === employee);
   if (!card) throw new Error('Employee not found; approve and save a card before planning.');
-  const key = card.reviewer ? 'reviewer' : difficultyRoles[difficulty];
+  const key = card.reviewer ? 'reviewer' : risk === 'critical' ? 'sol' : difficultyRoles[difficulty];
   const rolePath = directory(join(home, adapter.rolePath(key)));
   if (!existsSync(rolePath)) throw new Error(`Execution profile is not installed: ${adapter.roleName(key)}`);
   checkNativeRoleCollisions(adapter, home);

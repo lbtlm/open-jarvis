@@ -25,8 +25,8 @@
     "fast": false
   },
   "simple": {
-    "model": "gpt-6.1-sol",
-    "effort": "low",
+    "model": "gpt-6.1-terra",
+    "effort": "high",
     "fast": false
   }
 }

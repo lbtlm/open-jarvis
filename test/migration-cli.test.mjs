@@ -24,7 +24,7 @@ test('CLI migration preserves saved preferences before activation and reports co
   assert.deepEqual(JSON.parse(readFileSync(join(target,'jarvis/models.json'),'utf8')),model);
   assert.equal(ok(run(target,'import','--from',bundle,'--yes')).writtenCount,0);
   ok(run(target,'install','--models',join(target,'jarvis/models.json'),'--yes'));
-  const plan = ok(run(target,'plan','--employee','atlas-backend','--difficulty','standard'));
+  const plan = ok(run(target,'plan','--employee','atlas-backend','--difficulty','investigation'));
   assert.deepEqual(plan.requested,{model:'gpt-6-sol',effort:'low',speed:'fast'});
   assert.equal(plan.dispatched,false);
   const blocked = run(target,'plan','--employee','iris-frontend','--difficulty','light','--skill','interface-design');
