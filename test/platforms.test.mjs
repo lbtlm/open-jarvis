@@ -44,6 +44,18 @@ test('all four platforms share protected install, static doctor, idempotence and
     assert.equal(health.runtimeVerification, 'not-performed');
     assert.equal(install(options).status, 'already-installed');
     assert.equal(planTask({ ...options, employee: 'iris-frontend', difficulty: 'standard', skills: ['jarvis-orchestrator'] }).dispatched, false);
+    const daily = planTask({ ...options, employee: 'iris-frontend', difficulty: 'standard' });
+    const investigation = planTask({ ...options, employee: 'iris-frontend', difficulty: 'investigation' });
+    const critical = planTask({ ...options, employee: 'iris-frontend', difficulty: 'light', risk: 'critical' });
+    const separator = platform === 'codex' ? '_' : '-';
+    assert.equal(daily.role, `jarvis${separator}simple`);
+    assert.equal(investigation.role, `jarvis${separator}terra`);
+    assert.equal(critical.role, `jarvis${separator}sol`);
+    if (platform !== 'codex') {
+      assert.equal(daily.requested.model, 'inherit');
+      assert.equal(investigation.requested.model, 'inherit');
+      assert.equal(critical.requested.model, 'inherit');
+    }
     assert.equal(existsSync(join(home, platform === 'codex' ? 'agents/jarvis_terra.toml' : 'agents/jarvis-terra.md')), true);
     if (platform !== 'codex') assert.equal(existsSync(join(home, 'config.toml')), false);
     if (platform !== 'codex') {

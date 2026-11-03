@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Balance Codex execution profiles: Luna / Medium for explicit low-risk work, GPT-6.1 Terra / High for daily implementation and reproducible fixes, GPT-6.1 Sol / Medium for investigation and design, and Sol / High for critical work and independent review. Keep the five native role IDs and the generic Sol / Medium subagent fallback.
+- Route Simple/Standard work to the daily execution profile, add `investigation`, and prioritize the installed Complex profile for critical risk while preserving Reviewer-card priority. Keep professional matching, risk-triggered review, and one-executor delivery without recursive delegation or routine extra review.
+- Support explicit task-local XHigh through the existing `plan --effort` preview and compatible runtime binding, without adding a permanent role or enabling Ultra/Fast globally. Preserve the user-selected controller, custom model/effort/Fast choices, native platform inheritance, protected upgrades, idempotence and rollback.
+- Let an assigned Luna executor start a clear micro task within its authorized workspace using only relevant project rules and skills, without rescanning the global employee library or configuration. Align role instructions, routing guidance and installer/package regressions with these responsibilities.
+
 ## 0.2.0
 
 - Update `smol-toml` to 1.9.1 to fix quadratic parsing complexity for valid TOML described in [GHSA-r4xh-jqrq-34v2](https://github.com/advisories/GHSA-r4xh-jqrq-34v2).

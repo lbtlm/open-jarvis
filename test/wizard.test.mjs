@@ -42,7 +42,27 @@ test('recommendations are editable, existing preferences persist, and invalid an
   assert.deepEqual(result.models.controller, { model: 'existing-controller', effort: 'max', fast: true });
   assert.deepEqual(result.models.luna, { model: 'custom-small', effort: 'low', fast: false });
   assert.equal(result.models.terra.fast, false);
-  assert.match(output, /99|Choose 1–3/);
+  assert.match(output, /Choose 1–4/);
+  assert.equal(answers.length, 0);
+});
+
+test('Codex wizard offers GPT-6.1 Terra and validates its effort before accepting it', async () => {
+  const answers = [
+    '', '', '',
+    '', '', '',
+    '4', 'none', 'xhigh', '',
+    '', '', '',
+    '', '', '',
+    '', '', '',
+    '', '', 'yes',
+  ];
+  let output = '';
+  const result = await collectChoices({ initial: {},
+    ask: async () => { assert.ok(answers.length); return answers.shift(); },
+    write: text => { output += text; } });
+  assert.deepEqual(result.models.simple, { model: 'gpt-6.1-terra', effort: 'xhigh', fast: false });
+  assert.match(output, /gpt-6\.1-terra/);
+  assert.equal(result.confirmed, true);
   assert.equal(answers.length, 0);
 });
 
@@ -51,6 +71,8 @@ test('empty final confirmation declines installation', async () => {
   const result = await collectChoices({ initial: {}, ask: async () => answers.shift(), write: () => {} });
   assert.equal(result.confirmed, false);
   assert.equal(result.starter, 'none');
+  assert.deepEqual(result.models.simple, { model: 'gpt-6.1-terra', effort: 'high', fast: false });
+  assert.deepEqual(result.models.terra, { model: 'gpt-6.1-sol', effort: 'medium', fast: false });
 });
 
 test('starter prefill can be changed and invalid answers are retried before confirmation', async () => {

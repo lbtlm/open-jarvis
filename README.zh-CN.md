@@ -25,10 +25,10 @@ Open Jarvis 为 **Codex、WorkBuddy、Claude Code 和 Cursor** 提供主控监�
 
 需要 **Node.js 22+**（含 npm/npx）及支持[多平台指南（英文）](docs/multi-platform.md)所述原生配置的客户端。真实模型调用需要该客户端的登录与访问权限。默认目标为 Codex；其他客户端分别添加 `--platform workbuddy`、`--platform claude-code` 或 `--platform cursor`。
 
-从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.2.0** 为例，其下载地址在发布后可用，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
+从 [GitHub Releases](https://github.com/lbtlm/open-jarvis/releases) 选择已发布版本。以下命令以 **0.2.1** 为例，其下载地址在发布后可用，请同步替换版本、URL 和文件名。如果对应产物不可用，请使用下方经过审阅的本地安装包。
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis install
 ```
 
 **在 Codex 终端向导中选择配置：** 主控和执行角色的模型、思考强度、Fast，以及员工模板。模板默认为 `none`，可先安装协作规则，再按需添加员工。已有偏好优先；全新安装的主控推荐 Astra / High。Fast 单独选择，默认关闭，不会自动开启 Ultra 或切换到 Sol。
@@ -37,14 +37,14 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open
 <summary>pnpm 等价入口与经过审阅的本地安装包</summary>
 
 ```sh
-pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis install
+pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz dlx open-jarvis install
 ```
 
 将审阅过的安装包放在当前目录后，任选一个入口：
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis install
-pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis install
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis install
+pnpm --package=./open-jarvis-0.2.1.tgz dlx open-jarvis install
 ```
 
 两种入口共用所选平台的原生 home 和共享资产根。包通过 GitHub Releases 分发，**未发布到 npm registry**；依赖仍可能从 npm 获取，不保证完全离线。`--home` 选择平台原生配置根；Codex 保留 `CODEX_HOME` 和 `~/.codex` 默认值。共享资产根使用 `--assets-home`、`JARVIS_HOME` 或已保存的绑定，详见[选择规则（英文）](docs/multi-platform.md#choose-the-asset-root)。`--yes` 非交互安装并保留已有偏好。pnpm **10.18.1** 已在 Windows 本地验证，详见[兼容性说明（英文）](docs/compatibility.md)。
@@ -107,13 +107,13 @@ flowchart TD
 | --- | --- | --- |
 | `controller`（主控） | GPT-6 Astra / High | 调度、监督与最终验收 |
 | `luna` | GPT-6 Luna / Medium | 明确且低风险的小任务 |
-| `simple` | GPT-6.1 Sol / Low | 已知机制的简单实现 |
-| `terra` | GPT-6.1 Sol / Medium | 常规任务及范围内未知故障探索 |
+| `simple` | GPT-6.1 Terra / High | 明确契约的日常实现与一般可复现故障 |
+| `terra` | GPT-6.1 Sol / Medium | 未知机制调查、需求澄清与跨模块设计 |
 | `sol` | GPT-6.1 Sol / High | 契约变化、复杂语义或关键行为 |
 | `reviewer` | GPT-6.1 Sol / High | 风险或证据触发的独立复核 |
 
-这些是推荐设置，已有用户选择优先。`terra` 是兼容键，不代表 GPT-6 Terra 产品。
-按实际影响和风险判断难度：微改 `micro`、小改 `light`/`simple`、常规中改 `standard`、大改或关键变化 `complex`。默认由一位合适员工完成调查、实施和验证，无强制 Luna 扫描或查文件、读文档、实施接力。每次实现同时复用适用代码、合并相关重复、原位修改、清理替代旧逻辑并做必要新增；范围内相关旧冗余可一起处理，行为验证优先于净减行数。
+这些是推荐设置，已有用户选择优先。`simple` 与 `terra` 保留为兼容角色键；键名不决定实际模型，以上表或安装配置为准。
+按实际影响和风险判断难度：微改 `micro`、明确低风险任务 `light`、日常执行 `simple`/`standard`、未知机制与设计 `investigation`、关键多约束任务 `complex`。Standard 选日常执行 `simple` 档；critical 风险优先选 `sol`，Reviewer 岗位仍选 Reviewer。非关键且明确的多约束任务可显式 Standard + `--effort xhigh`；保留用户自定义模型与明确 effort 选择，实际执行须显式绑定核验。默认由一位合适员工完成调查、实施和验证，无强制 Luna 扫描或查文件、读文档、实施接力。每次实现同时复用适用代码、合并相关重复、原位修改、清理替代旧逻辑并做必要新增；范围内相关旧冗余可一起处理，行为验证优先于净减行数。
 Fast 与模型和思考强度分开选择；可用模型、权限和服务设置需在实际运行时核验。
 默认一个执行者；同时运行的子代理最多三个，包含 Reviewer、不含主控，并服从更低的用户或全局限额。
 执行者不递归委派。独立复核由明确风险或证据触发，并非每个任务都安排。
@@ -137,9 +137,9 @@ Fast 与模型和思考强度分开选择；可用模型、权限和服务设置
 例如，预览写作候选卡后再明确写入：
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis employees --init --starter writing --yes
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis employees --init --starter writing
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis employees --init --starter writing --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis plan --employee nova-writer --difficulty standard --skill my-writing-skill
 ```
 
 `my-writing-skill` 是占位技能 ID，必须换为实际存在的技能；缺失时计划会报告阻塞。
@@ -158,10 +158,10 @@ npx --package ./open-jarvis-0.2.0.tgz open-jarvis plan --employee nova-writer --
 下表是**命令后缀**，不能单独作为 shell 命令运行。请把其中一项接在完整入口后：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis
 ```
 
-所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.2.0.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.2.0.tgz dlx open-jarvis`，后缀保持不变。
+所有后缀也可接在 `pnpm --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz dlx open-jarvis` 后。使用经过审阅的本地包时，入口改为 `npx --package ./open-jarvis-0.2.1.tgz open-jarvis` 或 `pnpm --package=./open-jarvis-0.2.1.tgz dlx open-jarvis`，后缀保持不变。
 
 | 命令后缀 | 用途 |
 | --- | --- |
@@ -177,12 +177,12 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open
 例如，执行静态检查：
 
 ```sh
-npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis doctor
+npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis doctor
 ```
 
 `/path/to/manifest.json` 是占位路径，请换成实际安装清单。
 `--platform codex|workbuddy|claude-code|cursor` 选择适配器，`--home PATH` 选择其原生配置根，`--assets-home PATH` 选择共享个人资产根；`--project PATH` 显式选择项目资产；`--json` 输出机器可读结果。
-完整参数可通过 `npx --package ./open-jarvis-0.2.0.tgz open-jarvis --help` 查看。
+完整参数可通过 `npx --package ./open-jarvis-0.2.1.tgz open-jarvis --help` 查看。
 `audit` 和 `doctor` 不发起实时模型请求，也不证明员工已运行。
 
 <a id="assets"></a>
@@ -199,7 +199,7 @@ npx --package=https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open
 **可选安装 QMD：** 默认 `install` 不下载 QMD，并保留已有 QMD 环境与连接。交互向导可选择安装 QMD，指定 npm 或 pnpm、安装目录及 `auto` 或 `cpu` 设备；最终确认后才调用包管理器。Codex 非交互安装使用以下命令：
 
 ```sh
-npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open-jarvis-0.2.0.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
+npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.1/open-jarvis-0.2.1.tgz open-jarvis install --qmd --qmd-dir /absolute/path/to/qmd --qmd-manager npm --qmd-device auto --yes
 ```
 
 替换实际包路径与绝对安装目录；也支持 `--qmd-manager pnpm`。仅安装引擎和平台 native 包，不自动下载模型、建索引、装驱动或完整 CUDA Toolkit。语义检索仍需模型与获准资产索引就绪。GPU 检测和 CPU 回退沿用 QMD；安装包存在不证明 CUDA 可用，Windows 可能还需可选 cuBLAS 运行库。QMD 失败会报告部分安装，Jarvis 可保留安装结果。详见 [QMD 说明（英文）](docs/experience.md)。
@@ -214,10 +214,10 @@ npx --package https://github.com/lbtlm/open-jarvis/releases/download/v0.2.0/open
 重复的 `--skill-root PATH` 完整替换默认导出根目录列表。
 
 ```sh
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
-npx --package ./open-jarvis-0.2.0.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis export --out ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis import --from ./my-assets.jarvis.json.gz --yes
+npx --package ./open-jarvis-0.2.1.tgz open-jarvis install --models /absolute/path/to/shared-assets/models.json --yes
 ```
 
 有项目资产时，源机器的导出和目标机器的导入都需显式添加 `--project`，使用各自项目路径。
